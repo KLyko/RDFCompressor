@@ -1,5 +1,5 @@
 package de.uni_leipzig.simba.data;
-
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -46,15 +46,35 @@ public class DefaultCompressedGraph implements CompressedGraph {
 		return null;
 	}
 
-	public Set<Rule> getSuperRules(Rule r) {
+	private Set<Rule> getSuperRules(Rule r) {
 		HashSet<Rule> result = new HashSet<Rule>();
-		// FIXME prototype
+		for(Rule o : rules) {
+			if(o.profile.size()<r.profile.size())
+				continue;
+			else {// other has almost as many elements
+				if(o.profile.subjects.containsAll(r.profile.subjects)) {
+					result.add(o);
+				}				
+			}
+		}
 		return result;
 	}
 
 
 	@Override
 	public void computeRedundantRules() {
-		// TODO Auto-generated method stub		
+		Collections.sort(rules);
+		//1st compute all supersets
+		for(Rule r : rules) {
+			Set<Rule> supersets = getSuperRules(r);
+			r.parents.addAll(supersets);
+		}
+		//2nd remove redundant uris in supersets
+		for(Rule r : rules) {
+			for(Rule superRule : r.parents) {
+				superRule.profile.subjects.removeAll(r.profile.subjects);
+			}
+		}
 	}
+	
 }

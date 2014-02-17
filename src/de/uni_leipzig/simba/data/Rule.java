@@ -11,7 +11,7 @@ import java.util.List;
  * @author Klaus Lyko
  *
  */
-public class Rule implements Serializable{
+public class Rule implements Serializable, Comparable{
 	/**
 	 * List of Rules which apply to the same subjects.
 	 */
@@ -32,4 +32,12 @@ public class Rule implements Serializable{
 	public boolean equals(Object o) {
 		return profile.equals(((Rule)o).profile);
 	}
+
+	@Override
+	public int compareTo(Object o) {
+		return profile.compareTo(((Rule) o).profile);
+	}
+	
+	
+	
 }

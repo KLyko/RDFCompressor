@@ -18,7 +18,7 @@ import com.hp.hpl.jena.rdf.model.Resource;
 
 
 
-public class Profile implements Serializable {
+public class Profile implements Serializable, Comparable {
 
 	Property prop;
 	RDFNode obj;
@@ -47,5 +47,9 @@ public class Profile implements Serializable {
 	public int size() {
 		return subjects.size();
 	}
-
+	
+	@Override
+	public int compareTo(Object o) {
+		return this.size()-((Profile) o).size();
+	}
 }
