@@ -1,23 +1,20 @@
 package de.uni_leipzig.simba.data;
 
 import java.io.Serializable;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-
-import com.hp.hpl.jena.rdf.model.Property;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.Resource;
 
 /**
- * p-o-pair := {res1, ..., resn}
- * superrules
+ * Rules contain a Profile which basically resambles an tuple of a resource property and an object with a set
+ * of subjects (Resources):
+ * May links to super rules: rules with apply to the at least same subjects as this one..
  * @author Klaus Lyko
  *
  */
 public class Rule implements Serializable{
-
+	/**
+	 * List of Rules which apply to the same subjects.
+	 */
 	List<Rule> parents;
 	Profile profile;
 	

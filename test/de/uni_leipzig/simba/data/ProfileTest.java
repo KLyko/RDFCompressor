@@ -4,7 +4,6 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
@@ -31,10 +30,10 @@ public class ProfileTest {
 		// objects	(shared)	
 		Resource o1 = model.createResource("o1");
 		Resource o1b = model.createResource("o1");
-		Literal o2 = model.createLiteral("o2");
-
-		Resource cA = model.createResource("A");
-		Resource cB = model.createResource("B");
+//		Literal o2 = model.createLiteral("o2");
+//
+//		Resource cA = model.createResource("A");
+//		Resource cB = model.createResource("B");
 
 	
 //		profile 
@@ -54,7 +53,7 @@ public class ProfileTest {
 		Profile prof1b = new Profile(p1b, o1b);
 		prof1b.addSubject(s1);
 		prof1b.addSubject(s2);
-		
+		// checks equals on different 
 		assertTrue(prof1a.equals(prof1b));
 	}
 		

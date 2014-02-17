@@ -1,10 +1,15 @@
-package de.uni_leipzig.simba.data;
+package de.uni_leipzig.simba.util;
 
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
+
+import de.uni_leipzig.simba.data.CompressedGraph;
+import de.uni_leipzig.simba.data.DefaultCompressedGraph;
+import de.uni_leipzig.simba.data.Profile;
+import de.uni_leipzig.simba.data.Rule;
 
 public class DummyGraph {
 	

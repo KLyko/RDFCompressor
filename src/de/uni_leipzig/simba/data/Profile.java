@@ -41,7 +41,7 @@ public class Profile implements Serializable {
 	}
 	
 	/**
-	 * Size of a Profile is it's number of 
+	 * Size of a Profile is it's number of subjects
 	 * @return
 	 */
 	public int size() {
