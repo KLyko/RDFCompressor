@@ -15,24 +15,23 @@ public class DummyGraph {
 	public static CompressedGraph createDummyDataCompression() {
 		Model model = ModelFactory.createDefaultModel();
 //		
-		Resource o1 = model.createResource("o1");
-		Literal o2 = model.createLiteral("o2");
-		
+		//subjects
 		Resource s1 = model.createResource("s1");
 		Resource s2 = model.createResource("s2");
 		Resource s3 = model.createResource("s3");
 		Resource s4 = model.createResource("s4");
 		Resource s5 = model.createResource("s5");
 		Resource s6 = model.createResource("s6");
-		
-		Resource cA = model.createResource("A");
-		Resource cB = model.createResource("B");
-		
+		// properties (shared)
 		Property p1 = model.createProperty("p1");
 		Property p2 = model.createProperty("p2");
-		
 		Property is_a = model.createProperty("is_a");
-	
+		// objects	(shared)	
+		Resource o1 = model.createResource("o1");
+		Literal o2 = model.createLiteral("o2");
+		Resource cA = model.createResource("A");
+		Resource cB = model.createResource("B");
+
 	
 //		profile 
 		Profile prof1 = new Profile(p1, o1);

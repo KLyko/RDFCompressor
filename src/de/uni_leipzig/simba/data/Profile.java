@@ -9,22 +9,17 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 
 /**
- * The profile of a resource s is the set of all property-object pairs of all triples the resource s has in knowledge base K. 
- * profile(s) = {(p,o) : <s,p,o> \in K }
- * @author Klaus Lyko
- *
+ * As of now a Profile is the basic representation of a rule.
+ * ACHTUNG anders als im Entwurf !!!
+ * Property prop
+ * Resource object
+ * Set<Resource> subjects
  */
+
+
+
 public class Profile implements Serializable {
-	/**
-	 * 
-	 * ACHTUNG anders als im Entwurf !!!
-	 * Property prop
-	 * Resource object
-	 * Set<Resource> subjects
-	 */
-	
-	
-	
+
 	Property prop;
 	RDFNode obj;
 	Set<Resource> subjects;
@@ -42,6 +37,15 @@ public class Profile implements Serializable {
 	@Override
 	public boolean equals(Object other) {
 		Profile o = (Profile) other;
-		return(prop.equals(o.prop) && obj.equals(o.obj));
+		return(prop.getURI().equalsIgnoreCase(o.prop.getURI()) && obj.equals(o.obj));
 	}
+	
+	/**
+	 * Size of a Profile is it's number of 
+	 * @return
+	 */
+	public int size() {
+		return subjects.size();
+	}
+
 }
