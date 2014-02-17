@@ -6,5 +6,11 @@ package de.uni_leipzig.simba.data;
  *
  */
 public interface Profile {
-
+	/**
+	 * 
+	 * ACHTUNG anders als im Entwurf !!!
+	 * Property prop
+	 * Resource object
+	 * Set<Resource> subjects
+	 */
 }
