@@ -46,13 +46,19 @@ public class DefaultCompressedGraph implements CompressedGraph {
 		return null;
 	}
 
+	/**
+	 * Finds all (different) superrules of Rule r. These are those who contain all uris of rule r.
+	 * @param r
+	 * @return Set of all super rules of Rule r
+	 */
 	private Set<Rule> getSuperRules(Rule r) {
 		HashSet<Rule> result = new HashSet<Rule>();
 		for(Rule o : rules) {
 			if(o.profile.size()<r.profile.size())
 				continue;
 			else {// other has almost as many elements
-				if(o.profile.subjects.containsAll(r.profile.subjects)) {
+				if(!r.profile.equals(o.profile) && // isn't the same
+						o.profile.subjects.containsAll(r.profile.subjects)) { // other contains all uris of r
 					result.add(o);
 				}				
 			}
@@ -63,6 +69,7 @@ public class DefaultCompressedGraph implements CompressedGraph {
 
 	@Override
 	public void computeRedundantRules() {
+		//TODO is this really 
 		Collections.sort(rules);
 		//1st compute all supersets
 		for(Rule r : rules) {

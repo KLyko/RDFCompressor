@@ -1,7 +1,6 @@
 package de.uni_leipzig.simba.data;
 
 
-import java.util.Set;
 
 import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.rdf.model.Model;
@@ -42,9 +41,9 @@ public interface CompressedGraph {
 	public Rule findRule(Profile p);
 	
 	/**
-	 * Dummy for finding super rules: rules which at least contain all subjects of Rule r.
-	 * @param r
-	 * @return Set of Rules which also contain all subjects of r.
+	 * Method to compute all supersets of each rule, add pointers to them and remove redundant uris of the
+	 * subsets in the supersets.
+	 * @TODO is there an more time-wise efficient way of computing while generating the proiles?
 	 */
 	public void computeRedundantRules();
 }
