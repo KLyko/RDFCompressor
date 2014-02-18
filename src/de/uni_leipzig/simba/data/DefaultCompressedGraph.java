@@ -100,6 +100,14 @@ public class DefaultCompressedGraph implements CompressedGraph {
 			}
 		}
 	}
+
+    public String toString(){
+	String s = "";
+	for (Rule rule : this.rules){
+	    s += rule + "\n";
+	}
+	return s;
+    }
 	
 	public int size() {
 		int s=0;
@@ -108,5 +116,4 @@ public class DefaultCompressedGraph implements CompressedGraph {
 		}
 		return s;
 	}
-	
-}
+	}
