@@ -5,7 +5,6 @@ import java.io.StringWriter;
 
 import com.hp.hpl.jena.util.FileManager;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.rdf.model.Statement;
 

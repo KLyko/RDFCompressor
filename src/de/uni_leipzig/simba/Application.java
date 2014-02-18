@@ -27,6 +27,14 @@ public class Application{
 	}
 	else{
 	    System.out.println("Usage: java <programname> <inputfile>");
+	    if(System.getProperty("user.name").equalsIgnoreCase("lyko")) {
+	    	File path = new File("recources/dummy_data.nt");
+			if (path.exists()){
+			    CompressorFactory cf = new CompressorFactory();
+			    Compressor compressor = cf.getCompressor();
+			    compressor.compress(path);
+			}
+	    }
 	}
     }
 }
