@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Resource;
 
 /**
  * Default implementation of the CompressedGraph.
@@ -128,4 +129,16 @@ public class DefaultCompressedGraph implements CompressedGraph {
 		}
 		return s;
 	}
+
+    public String serialize(){
+	String s = "";
+	for (Rule rule : this.rules){
+	    s += rule.profile.prop + "|" + rule.profile.obj;
+	    for (Resource subject : rule.profile.subjects){
+		s += "|" + subject;
+	    }
+	s += "\n";
 	}
+	return s;
+    }
+}

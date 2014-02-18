@@ -1,6 +1,9 @@
 package de.uni_leipzig.simba.compress;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import com.hp.hpl.jena.util.FileManager;
@@ -43,8 +46,19 @@ public class DefaultCompressor implements Compressor {
 	// (build addgraph)
 
 	// serialize inverse list
-	//dcg.serialize();
-	
+	System.out.println(dcg.serialize());
+
+	try{
+	    PrintWriter writer = new PrintWriter("data.txt", "UTF-8");
+	    writer.println(dcg.serialize());
+	    writer.close();
+	} catch (FileNotFoundException fnfe){
+	    System.out.println(fnfe);
+	}
+	catch (UnsupportedEncodingException uee){
+	    System.out.println(uee);
+	}
+
 	// compress with bzip
     }
 
