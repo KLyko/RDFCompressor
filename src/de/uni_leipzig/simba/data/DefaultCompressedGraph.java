@@ -4,9 +4,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.NavigableSet;
 import java.util.Set;
-import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 
@@ -43,11 +41,9 @@ public class DefaultCompressedGraph implements CompressedGraph {
 	
 	public void addRule(Rule r) {
 		if(!ruleHash.contains(r)) {
-//			System.out.println("Adding non redundant rule at "+rules.size());
 			r.nr = rules.size();
 			rules.add(r);
-			boolean add=ruleHash.add(r);
-//			System.out.println("Adding Rule r to hash?"+add);
+			ruleHash.add(r);
 		} else {
 			logger.info("Not adding redundant rule");
 			int nr = -1; Rule o;
@@ -66,14 +62,6 @@ public class DefaultCompressedGraph implements CompressedGraph {
 		}
 	}
 	
-
-//	public Rule findRule(Profile p) {
-//		for(Rule r : rules) {
-//			if(r.profile.equals(p))
-//				return r;
-//		}
-//		return null;
-//	}
 
 	/**
 	 * Finds all (different) superrules of Rule r. These are those who contain all uris of rule r.

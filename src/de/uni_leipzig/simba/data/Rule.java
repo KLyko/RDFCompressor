@@ -45,7 +45,6 @@ public class Rule implements Serializable, Comparable{
 
     public String toString(){
 	return this.profile.prop + " - " + this.profile.obj + " - " + this.profile.subjects;
-    }
-	
+    }	
 	
 }

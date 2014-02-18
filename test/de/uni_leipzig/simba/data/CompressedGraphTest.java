@@ -1,7 +1,6 @@
 package de.uni_leipzig.simba.data;
 
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.util.Set;
 
@@ -12,8 +11,17 @@ import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
 
+/**
+ * Test class for Default implementation.
+ * @author Klaus Lyko
+ *
+ */
 public class CompressedGraphTest {
+	
 	@Test
+	/**
+	 * Tests if redundant rules are recognized
+	 */
 	public void testAdd() {
 		Model model = ModelFactory.createDefaultModel();
 		Resource s1 = model.createResource("s1");
@@ -21,19 +29,12 @@ public class CompressedGraphTest {
 		Resource s3 = model.createResource("s3");
 		Resource s4 = model.createResource("s4");
 		Resource s5 = model.createResource("s5");
-		// properties (shared)
+		// p1 == p1b && o1 == o1b 
 		Property p1 = model.createProperty("p1");
 		Property p1b = model.createProperty("p1");
-		// objects	(shared)	
 		Resource o1 = model.createResource("o1");
 		Resource o1b = model.createResource("o1");
-//		Literal o2 = model.createLiteral("o2");
-//
-//		Resource cA = model.createResource("A");
-//		Resource cB = model.createResource("B");
 
-	
-//		profile 
 		Profile prof1 = new Profile(p1, o1);
 		prof1.addSubject(s1);
 		prof1.addSubject(s2);
@@ -63,9 +64,13 @@ public class CompressedGraphTest {
 		g.addRule(new Rule(prof1b));
 		assertTrue(	g.rules.size() == 1);
 		
+		assertTrue(g.rules.get(0).profile.size() == 5);
 	}
 	
 	@Test
+	/**
+	 * Test for the computation of the super rules for a given rule.
+	 */
 	public void testGetSuperRules() {
 		Model model = ModelFactory.createDefaultModel();
 		Resource s1 = model.createResource("s1");
@@ -115,6 +120,9 @@ public class CompressedGraphTest {
 	
 	
 	@Test
+	/**
+	 * Test for global superset computation: Finding all supe rules and avoid redundant uris.
+	 */
 	public void testSuperSetComputation() {
 //		fail("Not implemented yet");
 		Model model = ModelFactory.createDefaultModel();
