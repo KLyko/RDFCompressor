@@ -43,5 +43,17 @@ public class Rule implements Serializable, Comparable{
 		return profile.hashCode();
 	}
 	
+	@Override
+	public String toString() {
+		String out = "";
+		out = nr+"["+profile+"]";
+		for(Rule parent : parents) {
+			out+=parent.nr+",";
+		}
+		if(parents.size()>0)
+			out = out.substring(0, out.length()-1);
+		return out;
+	}
+	
 	
 }

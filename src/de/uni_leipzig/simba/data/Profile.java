@@ -57,4 +57,18 @@ public class Profile implements Serializable, Comparable {
 	public int hashCode() {
 		return (prop.toString()+obj.toString()).hashCode();
 	}
+	
+	@Override
+	public String toString() {
+		String out = prop.toString()+"|"+obj.toString();
+		if(subjects.size()>0) {
+			out+="{";
+			for(Resource r : subjects) {
+				out+=r+";";
+			}
+			out = out.substring(0, out.length()-1);
+			out+="}";
+		}
+		return out;
+	}
 }
