@@ -1,17 +1,23 @@
 package de.uni_leipzig.simba.compress;
 
 import java.io.File;
+import java.io.StringWriter;
 
+import com.hp.hpl.jena.util.FileManager;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 
 public class DefaultCompressor implements Compressor {
 
     public DefaultCompressor(){
-	String path = "resources/dummy_data.nt";
-	File input = new File(path);
-	System.out.println(input);
-	//Model model = parseInputFile(path);
+    }
+    
+    public void compress(File input){
+	Model model = parseInputFile(input);
+
+	StringWriter output = new StringWriter();
+	model.write(output, "TURTLE");
+	System.out.println(output);
 
 	// build inverse list of p/o tuples
 
@@ -21,22 +27,9 @@ public class DefaultCompressor implements Compressor {
 
 	// compress with bzip
     }
-    
-    private Model parseInputFile(String path){
-	Model model = ModelFactory.createDefaultModel();
-	//model.read(new StringReader(input), null);
-	return model;
-    }
 
-    public static void main(String[] args){
-	// parse command line
-	if (args.length > 0){
-	    File path = new File(args[0]);
-	    //DefaultCompressor dc = new DefaultCompressor(path);
-	}
-	else{
-	    System.out.println("Usage: java <programname> <inputfile>");
-	}
-	DefaultCompressor dc = new DefaultCompressor();
+    private Model parseInputFile(File input){
+	Model m = FileManager.get().loadModel( input.toString() );
+	return m;
     }
 }
