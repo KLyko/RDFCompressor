@@ -42,6 +42,10 @@ public class Rule implements Serializable, Comparable{
 	public int hashCode() {
 		return profile.hashCode();
 	}
+
+    public String toString(){
+	return this.profile.prop + " - " + this.profile.obj + " - " + this.profile.subjects;
+    }
 	
 	
 }
