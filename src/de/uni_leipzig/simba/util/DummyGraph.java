@@ -102,4 +102,8 @@ public class DummyGraph {
 		return graph;
 		
 	}
+	
+	public static void main(String args[]) {
+		
+	}
 }

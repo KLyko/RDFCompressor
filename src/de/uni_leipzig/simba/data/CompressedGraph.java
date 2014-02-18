@@ -28,17 +28,11 @@ public interface CompressedGraph {
 	public void setAddModel(Model model);
 	
 	/**
-	 * Add a Rule.
+	 * Adds a Rule. If an equal Rule already exists this one is updated.
 	 * @param r
 	 */
 	public void addRule(Rule r);
 	
-	/**
-	 * Method tries to find the rule for the given profile. E.g. 
-	 * @param p profile for wich we try to find a rule
-	 * @return Rule for this profile, if it exists; null otherwise.
-	 */
-	public Rule findRule(Profile p);
 	
 	/**
 	 * Method to compute all supersets of each rule, add pointers to them and remove redundant uris of the

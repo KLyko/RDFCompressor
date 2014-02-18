@@ -17,7 +17,7 @@ public class Rule implements Serializable, Comparable{
 	 */
 	List<Rule> parents;
 	Profile profile;
-	
+	public int nr; 
 	
 	public Rule(Profile profile) {
 		this.profile = profile;
@@ -38,6 +38,10 @@ public class Rule implements Serializable, Comparable{
 		return profile.compareTo(((Rule) o).profile);
 	}
 	
+	@Override
+	public int hashCode() {
+		return profile.hashCode();
+	}
 	
 	
 }

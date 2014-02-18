@@ -52,4 +52,9 @@ public class Profile implements Serializable, Comparable {
 	public int compareTo(Object o) {
 		return this.size()-((Profile) o).size();
 	}
+	
+	@Override
+	public int hashCode() {
+		return (prop.toString()+obj.toString()).hashCode();
+	}
 }
