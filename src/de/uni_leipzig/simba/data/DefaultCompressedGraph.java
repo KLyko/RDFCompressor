@@ -112,5 +112,11 @@ public class DefaultCompressedGraph implements CompressedGraph {
 			}
 		}
 	}
-	
+    public String toString(){
+	String s = "";
+	for (Rule rule : this.rules){
+	    s += rule + "\n";
+	}
+	return s;
+    }
 }
