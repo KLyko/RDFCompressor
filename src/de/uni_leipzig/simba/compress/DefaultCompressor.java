@@ -6,7 +6,13 @@ import java.io.StringWriter;
 import com.hp.hpl.jena.util.FileManager;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.rdf.model.Statement;
 
+import de.uni_leipzig.simba.data.DefaultCompressedGraph;
+import de.uni_leipzig.simba.data.Profile;
+import de.uni_leipzig.simba.data.Rule;
+    
 public class DefaultCompressor implements Compressor {
 
     public DefaultCompressor(){
@@ -20,11 +26,25 @@ public class DefaultCompressor implements Compressor {
 	System.out.println(output);
 
 	// build inverse list of p/o tuples
+	DefaultCompressedGraph dcg = new DefaultCompressedGraph();
 
-	// build addgraph
+	StmtIterator iter = model.listStatements();
+	while( iter.hasNext() ){
+	    Statement stmt = iter.next();
+	    Profile profile = new Profile(stmt.getPredicate(),
+					  stmt.getObject());
+	    profile.addSubject(stmt.getSubject());
+	    Rule rule = new Rule(profile);
+
+	    dcg.addRule(rule);
+	}
+	System.out.println(dcg);
+	
+	// (build addgraph)
 
 	// serialize inverse list
-
+	//dcg.serialize();
+	
 	// compress with bzip
     }
 
