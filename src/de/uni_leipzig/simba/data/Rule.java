@@ -45,19 +45,6 @@ public class Rule implements Serializable, Comparable{
 
     public String toString(){
 	return this.profile.prop + " - " + this.profile.obj + " - " + this.profile.subjects;
-    }
-	
-	@Override
-	public String toString() {
-		String out = "";
-		out = nr+"["+profile+"]";
-		for(Rule parent : parents) {
-			out+=parent.nr+",";
-		}
-		if(parents.size()>0)
-			out = out.substring(0, out.length()-1);
-		return out;
-	}
-	
+    }	
 	
 }
