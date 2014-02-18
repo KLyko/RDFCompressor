@@ -3,6 +3,8 @@ package de.uni_leipzig.simba.data;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.Set;
+
 import org.junit.Test;
 
 import com.hp.hpl.jena.rdf.model.Model;
@@ -64,8 +66,104 @@ public class CompressedGraphTest {
 	}
 	
 	@Test
+	public void testGetSuperRules() {
+		Model model = ModelFactory.createDefaultModel();
+		Resource s1 = model.createResource("s1");
+		Resource s2 = model.createResource("s2");
+		Resource s3 = model.createResource("s3");
+		Resource s4 = model.createResource("s4");
+		Resource s5 = model.createResource("s5");
+		// properties
+		Property p1 = model.createProperty("p1");
+		Property p2 = model.createProperty("p2");
+		// objects
+		Resource o1 = model.createResource("o1");
+		Resource o2 = model.createResource("o2");
+
+
+	
+//		profile 
+		Profile prof1 = new Profile(p1, o1);
+		prof1.addSubject(s1);
+		prof1.addSubject(s2);
+		prof1.addSubject(s3);
+		prof1.addSubject(s4);
+		prof1.addSubject(s5);
+		
+		
+		
+		Profile prof2 = new Profile(p2, o2);
+		prof2.addSubject(s3);
+		prof2.addSubject(s4);
+		prof2.addSubject(s5);
+		
+		Rule r1 = new Rule(prof1);
+		
+		Rule r2 = new Rule(prof2);
+		
+		DefaultCompressedGraph g = new DefaultCompressedGraph();
+		g.addRule(r1);
+		g.addRule(r2);
+		
+
+		Set<Rule> superOf1 = g.getSuperRules(r1);
+		Set<Rule> superOf2 = g.getSuperRules(r2);
+		
+		assertTrue(superOf1.size() == 0);
+		assertTrue(superOf2.size() == 1);
+	}
+	
+	
+	@Test
 	public void testSuperSetComputation() {
-		fail("Not implemented yet");
+//		fail("Not implemented yet");
+		Model model = ModelFactory.createDefaultModel();
+		Resource s1 = model.createResource("s1");
+		Resource s2 = model.createResource("s2");
+		Resource s3 = model.createResource("s3");
+		Resource s4 = model.createResource("s4");
+		Resource s5 = model.createResource("s5");
+		// properties
+		Property p1 = model.createProperty("p1");
+		Property p2 = model.createProperty("p2");
+		Property p3 = model.createProperty("p3");
+		
+		// objects
+		Resource o1 = model.createResource("o1");
+		Resource o2 = model.createResource("o2");
+		Resource o3 = model.createResource("o3");
+
+	
+//		profile 
+		Profile prof1 = new Profile(p1, o1);
+		prof1.addSubject(s1);
+		prof1.addSubject(s2);
+		prof1.addSubject(s3);
+		prof1.addSubject(s4);
+		prof1.addSubject(s5);
+		
+		Profile prof2 = new Profile(p2, o2);
+		prof2.addSubject(s3);
+		prof2.addSubject(s4);
+		prof2.addSubject(s5);
+		
+		Profile prof3 = new Profile(p3, o3);
+		prof3.addSubject(s4);
+		prof3.addSubject(s5);
+		
+		Rule r1 = new Rule(prof1);		
+		Rule r2 = new Rule(prof2);
+		Rule r3 = new Rule(prof3);
+		
+		DefaultCompressedGraph g = new DefaultCompressedGraph();
+		g.addRule(r1);
+		g.addRule(r2);
+		g.addRule(r3);
+		int size0 = g.size();
+		g.computeSuperRules();
+		int size1 = g.size();
+		System.out.println("Size before supers:" +size0+" - Size with removed supers "+size1);
+		assertTrue(size1 < size0);
 	}
 	
 }

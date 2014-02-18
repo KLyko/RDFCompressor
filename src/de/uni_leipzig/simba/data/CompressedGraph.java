@@ -39,5 +39,11 @@ public interface CompressedGraph {
 	 * subsets in the supersets.
 	 * @TODO is there an more time-wise efficient way of computing while generating the proiles?
 	 */
-	public void computeRedundantRules();
+	public void computeSuperRules();
+	
+	/**
+	 * Computes the size, which is the sum of all URIs in all rules. 
+	 * @return
+	 */
+	public int size();
 }
