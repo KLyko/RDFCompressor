@@ -79,7 +79,7 @@ public class DefaultCompressedGraph implements CompressedGraph {
 	 * @param r
 	 * @return Set of all super rules of Rule r
 	 */
-	private Set<Rule> getSuperRules(Rule r) {
+	public Set<Rule> getSuperRules(Rule r) {
 		HashSet<Rule> result = new HashSet<Rule>();
 		Collections.sort(rules);
 		for(Rule o : rules) {
@@ -97,9 +97,9 @@ public class DefaultCompressedGraph implements CompressedGraph {
 
 
 	@Override
-	public void computeRedundantRules() {
-		//TODO is this really 
-//		Collections.sort(rules);
+	public void computeSuperRules() {
+		//TODO is this really benefficial?
+		Collections.sort(rules);
 		//1st compute all supersets
 		for(Rule r : rules) {
 			Set<Rule> supersets = getSuperRules(r);
@@ -111,6 +111,14 @@ public class DefaultCompressedGraph implements CompressedGraph {
 				superRule.profile.subjects.removeAll(r.profile.subjects);
 			}
 		}
+	}
+	
+	public int size() {
+		int s=0;
+		for(Rule r : rules) {
+			s+= r.profile.size();
+		}
+		return s;
 	}
 	
 }
