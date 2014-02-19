@@ -1,10 +1,8 @@
 package de.uni_leipzig.simba.compress;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 
@@ -55,7 +53,7 @@ public class DefaultCompressor implements Compressor {
 
 	// compress with bzip2
 	try{
-	    OutputStream os = new FileOutputStream("data.bz2");
+	    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".bz2");
 	    OutputStream bzos = new BZip2CompressorOutputStream(os);
 	    bzos.write(output.getBytes());
 	    bzos.close();
