@@ -2,8 +2,10 @@ package de.uni_leipzig.simba.compress;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.io.PrintWriter;
+import java.io.OutputStream;
 import java.io.StringWriter;
 
 import com.hp.hpl.jena.util.FileManager;
@@ -11,6 +13,8 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.rdf.model.Statement;
+
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
 import de.uni_leipzig.simba.data.DefaultCompressedGraph;
 import de.uni_leipzig.simba.data.Profile;
@@ -24,9 +28,9 @@ public class DefaultCompressor implements Compressor {
     public void compress(File input){
 	Model model = parseInputFile(input);
 
-	StringWriter output = new StringWriter();
-	model.write(output, "TURTLE");
-	System.out.println(output);
+	StringWriter graphOutput = new StringWriter();
+	model.write(graphOutput, "TURTLE");
+	System.out.println(graphOutput);
 
 	// build inverse list of p/o tuples
 	DefaultCompressedGraph dcg = new DefaultCompressedGraph();
@@ -41,25 +45,25 @@ public class DefaultCompressor implements Compressor {
 
 	    dcg.addRule(rule);
 	}
-	System.out.println(dcg);
+	System.out.println("\nCompressed graph:\n"+dcg);
 	
 	// (build addgraph)
 
 	// serialize inverse list
-	System.out.println(dcg.serialize());
+	String output = dcg.serialize();
+	System.out.println("Serialized compressed graph:\n" + output);
 
+	// compress with bzip2
 	try{
-	    PrintWriter writer = new PrintWriter("data.txt", "UTF-8");
-	    writer.println(dcg.serialize());
-	    writer.close();
-	} catch (FileNotFoundException fnfe){
-	    System.out.println(fnfe);
+	    OutputStream os = new FileOutputStream("data.bz2");
+	    OutputStream bzos = new BZip2CompressorOutputStream(os);
+	    bzos.write(output.getBytes());
+	    bzos.close();
+	    os.close();
 	}
-	catch (UnsupportedEncodingException uee){
-	    System.out.println(uee);
+	catch (IOException ioe){
+	    System.out.println(ioe);
 	}
-
-	// compress with bzip
     }
 
     private Model parseInputFile(File input){
