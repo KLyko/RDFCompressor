@@ -26,7 +26,7 @@ public class DefaultCompressor implements Compressor {
     }
     
     public void compress(File input){
-	Model model = parseInputFile(input);
+	Model model = FileManager.get().loadModel( input.toString() );
 
 	StringWriter graphOutput = new StringWriter();
 	model.write(graphOutput, "TURTLE");
@@ -64,10 +64,5 @@ public class DefaultCompressor implements Compressor {
 	catch (IOException ioe){
 	    System.out.println(ioe);
 	}
-    }
-
-    private Model parseInputFile(File input){
-	Model m = FileManager.get().loadModel( input.toString() );
-	return m;
     }
 }
