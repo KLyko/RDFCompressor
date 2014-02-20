@@ -1,5 +1,4 @@
 package de.uni_leipzig.simba.data;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -50,30 +49,28 @@ public class IndexCompressedGraph {
 	}
 	
 
-	/**
-	 * Finds all (different) superrules of Rule r. These are those who contain all uris of rule r.
-	 * @param r
-	 * @return Set of all super rules of Rule r
-	 */
+	
 	public Set<IndexRule> getSuperRules(IndexRule r) {
 		HashSet<IndexRule> result = new HashSet<IndexRule>();
-		Collections.sort(rules);
+		// Collections.sort(rules);
 		for(IndexRule o : rules) {
 			if(o.profile.size()<r.profile.size())
 				continue;
 			else {// other has almost as many elements
 				if(!r.profile.equals(o.profile) && // isn't the same
-						o.profile.subjects.containsAll(r.profile.subjects)) { // other contains all uris of r
-					result.add(o);
-				}				
+						!r.profile.subjects.isEmpty() && // isn't empty
+						o.profile.subjects.containsAll(r.profile.subjects)// other contains all uris of r
+						&& !o.parents.contains(r)) // avoid double linking to parent
+				{result.add(o);}	
 			}
 		}
 		return result;
 	}
 
+
 	public void computeSuperRules() {
 		//TODO is this really benefficial?
-		Collections.sort(rules);
+//		Collections.sort(rules);
 		//1st compute all supersets
 		for(IndexRule r : rules) {
 			Set<IndexRule> supersets = getSuperRules(r);
@@ -113,6 +110,10 @@ public class IndexCompressedGraph {
 	s += "\n";
 	}
 	return s;
+    }
+    
+    public List<IndexRule> getRules() {
+    	return rules;
     }
 
 }

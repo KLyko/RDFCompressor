@@ -15,12 +15,9 @@ import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.util.FileManager;
 
-import de.uni_leipzig.simba.data.DefaultCompressedGraph;
 import de.uni_leipzig.simba.data.IndexCompressedGraph;
 import de.uni_leipzig.simba.data.IndexProfile;
 import de.uni_leipzig.simba.data.IndexRule;
-import de.uni_leipzig.simba.data.Profile;
-import de.uni_leipzig.simba.data.Rule;
 /**
  * Implementation of an index based compression:
  * Creates Indexes for all subjects, objects, predicates. And operates on them
@@ -32,7 +29,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	HashMap<String, String> shortToUri = new HashMap();
 	HashMap<Integer, String> subjectMap = new HashMap();
 	HashMap<Integer, String> objectMap = new HashMap();
-	HashMap<Integer, String> predicateMap = new HashMap();
+	HashMap<Integer, String> propertyMap = new HashMap();
 	
 	public IndexBasedCompressor() {
 		//nothing to do here so far.
@@ -44,7 +41,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		// TODO Auto-generated method stub
 		System.out.println("short-to-uri\n====="+shortToUri);
 		System.out.println("subjectMap\n====="+subjectMap);
-		System.out.println("predicateMap\n====="+predicateMap);
+		System.out.println("predicateMap\n====="+propertyMap);
 		System.out.println("objectMap\n====="+objectMap);
 	}
 
@@ -54,40 +51,85 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			StringWriter graphOutput = new StringWriter();
 			model.write(graphOutput, "TURTLE");
 			System.out.println(graphOutput);
-		
+			
+			shortToUri.putAll(model.getNsPrefixMap());
+			
 			// build inverse list of p/o tuples
 			IndexCompressedGraph dcg = new IndexCompressedGraph();
 		
 			StmtIterator iter = model.listStatements();
 			while( iter.hasNext() ){
-			    Statement stmt = iter.next();
-			    IndexProfile profile = new IndexProfile(stmt.getPredicate(),
-							  stmt.getObject());
-			    profile.addSubject(stmt.getSubject());
-			    IndexRule rule = new IndexRule(profile);
-		
-			    dcg.addRule(rule);
+				Statement stmt = iter.next();
+				
+				String s = stmt.getSubject().toString();
+				try{
+					s = model.shortForm(s);
+				} catch(NullPointerException npe){ /*bnode*/ }
+				
+				String p = stmt.getPredicate().getURI();
+				try{
+					p = model.shortForm(p);
+				} catch(NullPointerException npe){ /*bnode*/ }
+				
+				String o = stmt.getObject().toString();
+				try{
+					o = model.shortForm(o);
+				} catch(NullPointerException npe){ /*bnode*/ }
+				
+				System.out.println(s + " -- " + p + " -- " + o);
+				int indexS = addIndex(s, SPO.SUBJECT);
+				int indexP = addIndex(p, SPO.PREDICATE);
+				int indexO = addIndex(o, SPO.OBJECT);
+				IndexProfile profile = new IndexProfile(indexP, indexO);
+				profile.addSubject(indexS);
+				IndexRule rule = new IndexRule(profile);
+				dcg.addRule(rule);
 			}
+			dcg.computeSuperRules();
 			System.out.println("\nCompressed graph:\n"+dcg);
-			
-			// (build addgraph)
-		
+			String prefixes = "";
+			for (Entry<String, String> entry : model.getNsPrefixMap().entrySet()) {
+				prefixes += entry.getKey() + "|" + entry.getValue() + "\n";
+			}
+			prefixes += "\n";
 			// serialize inverse list
+			dcg.computeSuperRules();
+		
 			String output = dcg.serialize();
 			System.out.println("Serialized compressed graph:\n" + output);
-		
 			// compress with bzip2
 			try{
-			    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".bz2");
-			    OutputStream bzos = new BZip2CompressorOutputStream(os);
-			    bzos.write(output.getBytes());
-			    bzos.close();
-			    os.close();
+				OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".bz2");
+				OutputStream bzos = new BZip2CompressorOutputStream(os);
+				bzos.write(prefixes.getBytes());
+				bzos.write(output.getBytes());
+				bzos.close();
+				os.close();
 			}
 			catch (IOException ioe){
-			    System.out.println(ioe);
+				System.out.println(ioe);
 			}
-	    }
+			writeIndexFiles();
+			for(IndexRule rule : dcg.getRules()) {
+				String p = propertyMap.get(rule.getProfile().getProperty());
+				String o = objectMap.get(rule.getProfile().getObject());
+				try{int i = Integer.parseInt(o);
+					o = subjectMap.get(i);
+				} catch(NumberFormatException e){}
+				String  ruleString = ""+rule.nr +": "+ p +"-"+o+" [";
+					for(int s : rule.getProfile().getSubjects()) {
+						ruleString+=subjectMap.get(s)+" | ";
+					}
+				ruleString +="] ";
+				ruleString+=" {";
+				for(IndexRule sr : rule.getParents()) {
+					ruleString += sr.nr +"|";
+				}
+				ruleString+="}";
+				System.out.println(ruleString);
+			}
+//			dcg.finalize();
+		}
 	
 	
 	@Override
@@ -128,15 +170,15 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				}				
 				break;
 			case PREDICATE: 
-				if(predicateMap.containsValue(uri)) {
-					for(Entry<Integer, String> e:predicateMap.entrySet())
+				if(propertyMap.containsValue(uri)) {
+					for(Entry<Integer, String> e:propertyMap.entrySet())
 						if(e.getValue().equals(uri)) {
 							index = e.getKey();
 							break;
 						}	
 				} else { // create new one
-					index = predicateMap.size();
-					predicateMap.put(predicateMap.size(), uri);
+					index = propertyMap.size();
+					propertyMap.put(propertyMap.size(), uri);
 				}				
 				break;
 			case OBJECT:

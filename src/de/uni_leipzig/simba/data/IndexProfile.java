@@ -28,7 +28,7 @@ public class IndexProfile implements Serializable, Comparable {
 	@Override
 	public boolean equals(Object other) {
 		IndexProfile o = (IndexProfile) other;
-		return(prop==o.prop && obj==o.obj);
+		return(prop.equals(o.prop) && obj.equals(o.obj));
 	}
 	
 	/**
@@ -47,5 +47,15 @@ public class IndexProfile implements Serializable, Comparable {
 	@Override
 	public int hashCode() {
 		return (""+prop.toString()+obj.toString()).hashCode();
+	}
+	
+	public Integer getProperty() {
+		return prop;
+	}
+	public Integer getObject() {
+		return obj;
+	}
+	public Set<Integer> getSubjects() {
+		return subjects;
 	}
 }

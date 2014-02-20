@@ -20,7 +20,7 @@ public class IndexBasedCompressorTest {
 		int o2 = comp.addIndex("s1", SPO.OBJECT); 
 		assertTrue(o0 != o1 && o1 == o2);
 		assertTrue(comp.objectMap.size() == 2);
-		assertTrue(comp.predicateMap.size() == 2);
+		assertTrue(comp.propertyMap.size() == 2);
 		assertTrue(comp.subjectMap.size() == 2);
 	}
 

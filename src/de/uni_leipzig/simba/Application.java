@@ -4,6 +4,7 @@ import java.io.File;
 
 import de.uni_leipzig.simba.compress.Compressor;
 import de.uni_leipzig.simba.compress.CompressorFactory;
+import de.uni_leipzig.simba.compress.IndexBasedCompressor;
 
 public class Application{
 
@@ -28,10 +29,10 @@ public class Application{
 	else{
 	    System.out.println("Usage: java <programname> <inputfile>");
 	    if(System.getProperty("user.name").equalsIgnoreCase("lyko")) {
-	    	File path = new File("recources/dummy_data.nt");
+	    	File path = new File("resources/dummy_data2.nt");
 			if (path.exists()){
-			    CompressorFactory cf = new CompressorFactory();
-			    Compressor compressor = cf.getCompressor();
+//			    CompressorFactory cf = new CompressorFactory();
+			    IndexBasedCompressor compressor = new IndexBasedCompressor();
 			    compressor.compress(path);
 			}
 	    }

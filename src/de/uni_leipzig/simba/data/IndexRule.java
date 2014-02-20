@@ -44,7 +44,19 @@ public class IndexRule implements Serializable, Comparable{
 	}
 
     public String toString(){
-	return this.profile.prop + " - " + this.profile.obj + " - " + this.profile.subjects;
+		String out = this.profile.prop + " - " + this.profile.obj + " - " + this.profile.subjects + ":" ;
+		for(IndexRule parent:parents) {
+			out+= parent.nr +"|";
+		}
+		return out.substring(0, out.length()-1);
     }	
+    
+    public IndexProfile getProfile() {
+    	return profile;
+    }
+    
+    public List<IndexRule> getParents() {
+    	return parents;
+    }
 	
 }
