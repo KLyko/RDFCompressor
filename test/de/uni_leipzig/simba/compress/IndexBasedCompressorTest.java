@@ -15,9 +15,10 @@ public class IndexBasedCompressorTest {
 		comp.addIndex("p1", SPO.PREDICATE);
 		comp.addIndex("p2", SPO.PREDICATE);
 		comp.addIndex("p1", SPO.PREDICATE);
-		comp.addIndex("o1", SPO.OBJECT);
-		comp.addIndex("s1", SPO.OBJECT);
-		comp.addIndex("s1", SPO.OBJECT);
+		int o0 = comp.addIndex("o1", SPO.OBJECT);
+		int o1 = comp.addIndex("s1", SPO.OBJECT);
+		int o2 = comp.addIndex("s1", SPO.OBJECT); 
+		assertTrue(o0 != o1 && o1 == o2);
 		assertTrue(comp.objectMap.size() == 2);
 		assertTrue(comp.predicateMap.size() == 2);
 		assertTrue(comp.subjectMap.size() == 2);
