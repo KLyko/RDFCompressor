@@ -11,20 +11,20 @@ import java.util.List;
  * @author Klaus Lyko
  *
  */
-public class IndexRule implements Serializable, Comparable{
+public class IndexRule implements IRule<IndexProfile>, Serializable, Comparable{
 	/**
 	 * List of Rules which apply to the same subjects.
 	 */
-	List<IndexRule> parents;
+	List<IRule<IndexProfile>> parents;
 	IndexProfile profile;
-	public int nr; 
+	int nr;
 	
 	public IndexRule(IndexProfile profile) {
 		this.profile = profile;
 		parents = new LinkedList();
 	}
-	
-	public void addParent(IndexRule r) {
+	@Override
+	public void addParent(IRule<IndexProfile> r) {
 		this.parents.add(r);
 	}
 	
@@ -42,21 +42,33 @@ public class IndexRule implements Serializable, Comparable{
 	public int hashCode() {
 		return profile.hashCode();
 	}
-
+	@Override
     public String toString(){
 		String out = this.profile.prop + " - " + this.profile.obj + " - " + this.profile.subjects + ":" ;
-		for(IndexRule parent:parents) {
-			out+= parent.nr +"|";
+		for(IRule parent:parents) {
+			out+= parent.getNumber() +"|";
 		}
 		return out.substring(0, out.length()-1);
     }	
-    
+    @Override
     public IndexProfile getProfile() {
     	return profile;
     }
-    
-    public List<IndexRule> getParents() {
+    @Override
+    public List<IRule<IndexProfile>> getParents() {
     	return parents;
     }
-	
+
+	@Override
+	public void setProfile(IndexProfile profile) {
+		this.profile = profile;
+	}
+	@Override
+	public int getNumber() {
+		return nr;
+	}
+	@Override
+	public void setNumber(int nr) {
+		this.nr = nr;
+	}
 }

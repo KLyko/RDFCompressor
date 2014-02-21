@@ -11,20 +11,20 @@ import java.util.List;
  * @author Klaus Lyko
  *
  */
-public class Rule implements Serializable, Comparable{
+public class Rule implements IRule<Profile>, Serializable, Comparable{
 	/**
 	 * List of Rules which apply to the same subjects.
 	 */
-	List<Rule> parents;
+	List<IRule<Profile>> parents;
 	Profile profile;
-	public int nr; 
+	int nr;
 	
 	public Rule(Profile profile) {
 		this.profile = profile;
-		parents = new LinkedList<Rule>();
+		parents = new LinkedList();
 	}
-	
-	public void addParent(Rule r) {
+	@Override
+	public void addParent(IRule r) {
 		this.parents.add(r);
 	}
 	
@@ -42,9 +42,34 @@ public class Rule implements Serializable, Comparable{
 	public int hashCode() {
 		return profile.hashCode();
 	}
-
+	@Override
     public String toString(){
 	return this.profile.prop + " - " + this.profile.obj + " - " + this.profile.subjects;
-    }	
+    }
+
+	@Override
+	public int getNumber() {
+		return nr;
+	}
+
+	@Override
+	public void setNumber(int nr) {
+		this.nr = nr;
+	}
+
+	@Override
+	public void setProfile(Profile profile) {
+		this.profile= profile; 
+	}
+
+	@Override
+	public Profile getProfile() {
+		return profile;
+	}
+
+	@Override
+	public List<IRule<Profile>> getParents() {
+		return parents;
+	}	
 	
 }

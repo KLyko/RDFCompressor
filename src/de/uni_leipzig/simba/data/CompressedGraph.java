@@ -2,6 +2,8 @@ package de.uni_leipzig.simba.data;
 
 
 
+import java.util.List;
+
 import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.rdf.model.Model;
 
@@ -31,7 +33,7 @@ public interface CompressedGraph {
 	 * Adds a Rule. If an equal Rule already exists this one is updated.
 	 * @param r
 	 */
-	public void addRule(Rule r);
+	public void addRule(IRule r);
 	
 	
 	/**
@@ -46,4 +48,9 @@ public interface CompressedGraph {
 	 * @return
 	 */
 	public int size();
+	
+    
+    public List<IRule> getRules();
+    
+    public String serialize();
 }

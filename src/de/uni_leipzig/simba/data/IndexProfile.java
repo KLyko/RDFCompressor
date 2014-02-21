@@ -9,11 +9,11 @@ import java.util.Set;
  * @author Klaus Lyko
  *
  */
-public class IndexProfile implements Serializable, Comparable {
+public class IndexProfile implements IProfile<Integer, Integer, Integer>, Serializable, Comparable {
 
 	Integer prop;
 	Integer obj;
-	Set<Integer> subjects;
+	Set<Integer> subjects = new HashSet<Integer>();
 	
 	public IndexProfile(Integer prop, Integer obj) {
 		this.prop = prop;
@@ -57,5 +57,15 @@ public class IndexProfile implements Serializable, Comparable {
 	}
 	public Set<Integer> getSubjects() {
 		return subjects;
+	}
+
+	@Override
+	public void setObject(Integer object) {
+		obj = object;
+	}
+
+	@Override
+	public void setProperty(Integer property) {
+		prop = property;
 	}
 }

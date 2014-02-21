@@ -15,6 +15,7 @@ import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.util.FileManager;
 
+import de.uni_leipzig.simba.data.IRule;
 import de.uni_leipzig.simba.data.IndexCompressedGraph;
 import de.uni_leipzig.simba.data.IndexProfile;
 import de.uni_leipzig.simba.data.IndexRule;
@@ -116,14 +117,14 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				try{int i = Integer.parseInt(o);
 					o = subjectMap.get(i);
 				} catch(NumberFormatException e){}
-				String  ruleString = ""+rule.nr +": "+ p +"-"+o+" [";
+				String  ruleString = ""+rule.getNumber() +": "+ p +"-"+o+" [";
 					for(int s : rule.getProfile().getSubjects()) {
 						ruleString+=subjectMap.get(s)+" | ";
 					}
 				ruleString +="] ";
 				ruleString+=" {";
-				for(IndexRule sr : rule.getParents()) {
-					ruleString += sr.nr +"|";
+				for(IRule sr : rule.getParents()) {
+					ruleString += sr.getNumber() +"|";
 				}
 				ruleString+="}";
 				System.out.println(ruleString);

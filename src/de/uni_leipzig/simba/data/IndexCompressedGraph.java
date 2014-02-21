@@ -1,4 +1,5 @@
 package de.uni_leipzig.simba.data;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -78,8 +79,8 @@ public class IndexCompressedGraph {
 		}
 		//2nd remove redundant uris in supersets
 		for(IndexRule r : rules) {
-			for(IndexRule superRule : r.parents) {
-				superRule.profile.subjects.removeAll(r.profile.subjects);
+			for(IRule<IndexProfile> superRule : r.parents) {
+				superRule.getProfile().subjects.removeAll(r.profile.subjects);
 			}
 		}
 	}

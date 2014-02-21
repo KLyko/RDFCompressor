@@ -18,7 +18,7 @@ import com.hp.hpl.jena.rdf.model.Resource;
 
 
 
-public class Profile implements Serializable, Comparable {
+public class Profile implements IProfile<Resource, Property, RDFNode>, Serializable, Comparable {
 
 	Property prop;
 	RDFNode obj;
@@ -56,6 +56,31 @@ public class Profile implements Serializable, Comparable {
 	@Override
 	public int hashCode() {
 		return (prop.toString()+obj.toString()).hashCode();
+	}
+
+	@Override
+	public void setObject(RDFNode object) {
+		this.obj = object;
+	}
+
+	@Override
+	public void setProperty(Property property) {
+		this.prop = property;
+	}
+
+	@Override
+	public Property getProperty() {
+		return prop;
+	}
+
+	@Override
+	public RDFNode getObject() {
+		return obj;
+	}
+
+	@Override
+	public Set<Resource> getSubjects() {
+		return subjects;
 	}
 	
 //	@Override
