@@ -1,5 +1,4 @@
 package de.uni_leipzig.simba.data;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -14,7 +13,7 @@ import org.apache.log4j.Logger;
  * @author Klaus Lyko
  *
  */
-public class IndexCompressedGraph{
+public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	/**redundant for now*/
 	List<IndexRule> rules;
 	HashSet<IndexRule> ruleHash;

@@ -18,7 +18,7 @@ import com.hp.hpl.jena.rdf.model.Resource;
  * @author Klaus Lyko
  *
  */
-public class DefaultCompressedGraph{
+public class DefaultCompressedGraph implements CompressedGraph<Rule>{
 	/**redundant for now*/
 	List<Rule> rules;
 	HashSet<Rule> ruleHash;
