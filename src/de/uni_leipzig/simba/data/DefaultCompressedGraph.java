@@ -18,7 +18,7 @@ import com.hp.hpl.jena.rdf.model.Resource;
  * @author Klaus Lyko
  *
  */
-public class DefaultCompressedGraph implements CompressedGraph {
+public class DefaultCompressedGraph{
 	/**redundant for now*/
 	List<Rule> rules;
 	HashSet<Rule> ruleHash;
@@ -85,7 +85,7 @@ public class DefaultCompressedGraph implements CompressedGraph {
 	}
 
 
-	@Override
+
 	public void computeSuperRules() {
 		//TODO is this really benefficial?
 		Collections.sort(rules);
@@ -96,8 +96,8 @@ public class DefaultCompressedGraph implements CompressedGraph {
 		}
 		//2nd remove redundant uris in supersets
 		for(Rule r : rules) {
-			for(Rule superRule : r.parents) {
-				superRule.profile.subjects.removeAll(r.profile.subjects);
+			for(IRule<Profile> superRule : r.parents) {
+				superRule.getProfile().subjects.removeAll(r.profile.subjects);
 			}
 		}
 	}
@@ -129,4 +129,9 @@ public class DefaultCompressedGraph implements CompressedGraph {
 	}
 	return s;
     }
+
+	
+	public List<Rule> getRules() {
+		return rules;
+	}
 }
