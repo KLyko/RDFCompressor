@@ -17,7 +17,7 @@ public class DummyGraph {
 	 * 
 	 * @return
 	 */
-	public static CompressedGraph createDummyDataCompression() {
+	public static DefaultCompressedGraph createDummyDataCompression() {
 		Model model = ModelFactory.createDefaultModel();
 //		
 		//subjects

@@ -14,7 +14,7 @@ import org.apache.log4j.Logger;
  * @author Klaus Lyko
  *
  */
-public class IndexCompressedGraph {
+public class IndexCompressedGraph{
 	/**redundant for now*/
 	List<IndexRule> rules;
 	HashSet<IndexRule> ruleHash;
