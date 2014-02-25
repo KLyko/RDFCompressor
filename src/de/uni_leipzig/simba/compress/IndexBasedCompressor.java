@@ -45,18 +45,19 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	@Override
 	public void writeIndexFiles() {
 		// TODO Auto-generated method stub
-		System.out.println("short-to-uri\n====="+shortToUri);
-		System.out.println("subjectMap\n====="+subjectMap);
-		System.out.println("predicateMap\n====="+propertyMap);
-		System.out.println("objectMap\n====="+objectMap);
+//		System.out.println("short-to-uri\n====="+shortToUri);
+//		System.out.println("subjectMap\n====="+subjectMap);
+//		System.out.println("predicateMap\n====="+propertyMap);
+//		System.out.println("objectMap\n====="+objectMap);
 	}
 
 	 public void compress(File input) {
+		 	long start = System.currentTimeMillis();
 			Model model = FileManager.get().loadModel( input.toString() );
 		
 			StringWriter graphOutput = new StringWriter();
 			model.write(graphOutput, "TURTLE");
-			System.out.println(graphOutput);
+//			System.out.println(graphOutput);
 			
 			shortToUri.putAll(model.getNsPrefixMap());
 			
@@ -64,6 +65,10 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			IndexCompressedGraph dcg = new IndexCompressedGraph();
 		
 			StmtIterator iter = model.listStatements();
+			long middle = System.currentTimeMillis();
+
+			System.out.println("Loading model took: " + (middle-start) + " milli seconds");
+			
 			while( iter.hasNext() ){
 				Statement stmt = iter.next();
 				
@@ -82,7 +87,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					o = model.shortForm(o);
 				} catch(NullPointerException npe){ /*bnode*/ }
 				
-				System.out.println(s + " -- " + p + " -- " + o);
+//				System.out.println(s + " -- " + p + " -- " + o);
 				int indexS = addIndex(s, SPO.SUBJECT);
 				int indexP = addIndex(p, SPO.PREDICATE);
 				int indexO = addIndex(o, SPO.OBJECT);
@@ -90,12 +95,17 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				profile.addSubject(indexS);
 				IndexRule rule = new IndexRule(profile);
 				dcg.addRule(rule);
+				
 			}
-			
+			System.out.println("Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds");
+			middle = System.currentTimeMillis();
 			dcg.computeSuperRules();
+			System.out.println("Computing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds");
+			middle = System.currentTimeMillis();
 			dcg.removeRedundantParentRules();
+			System.out.println("Removing redundancies: " + (System.currentTimeMillis()-middle) + " milli seconds");
 			System.out.println("\nCompressed graph:\n"+dcg);
-
+			middle = System.currentTimeMillis();
 			// serialize prefixes
 			String prefixes = "";
 			for (Entry<String, String> entry : model.getNsPrefixMap().entrySet()) {
@@ -193,7 +203,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 
 			    // write rules
 			    OutputStream osRule = new FileOutputStream(tDir + "rules");
-			    System.out.println("#######"+ruleString);
+//			    System.out.println("#######"+ruleString);
 			    osRule.write(ruleString.getBytes());
 			    osRule.close();
 			    File fileRule = new File(tDir + "rules");
@@ -211,6 +221,9 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			catch (IOException ioe){
 				System.out.println(ioe);
 			}
+			System.out.println("Serializing: " + (System.currentTimeMillis()-middle) + " milli seconds");
+			System.out.println("Overall: " + (System.currentTimeMillis()-start) + " milli seconds");
+			System.out.println("Overall: " + (System.currentTimeMillis()-start)/1000 + " seconds");
 		}
 	
 	
