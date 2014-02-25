@@ -7,8 +7,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
@@ -114,7 +117,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
 			System.out.println(print);
 			log += print +"\n";
-			System.out.println("\nCompressed graph:\n"+dcg);
+//			System.out.println("\nCompressed graph:\n"+dcg);
 			middle = System.currentTimeMillis();
 			// serialize prefixes
 			String prefixes = "";
@@ -132,22 +135,30 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				    rule.getProfile().getProperty() + "-" +
 				    rule.getProfile().getObject() + "[";
 				Iterator ruleIter = rule.getProfile().getSubjects().iterator();
-				while (ruleIter.hasNext()){
-				    ruleString += subjectMap.get(ruleIter.next());
-				    if (ruleIter.hasNext()){ ruleString += "|";}
+				List<Integer> subjects = new LinkedList();
+				subjects.addAll(rule.getProfile().getSubjects());
+				Collections.sort(subjects);
+				int offset = 0;
+				for(int i=0; i<subjects.size();i++) {
+					int val = subjects.get(i);
+					ruleString += val-offset;
+					offset = val;
+					 if (i<subjects.size()-1){ ruleString += "|";}
 				}
-
 				ruleString +="]";
 				ruleString+="{";
+				offset = 0;
 				ruleIter = rule.getParents().iterator();
 				while (ruleIter.hasNext()){
 				    IRule sr = (IRule) ruleIter.next();
-				    ruleString += sr.getNumber();
+				    ruleString += sr.getNumber()-offset;
+				    offset= sr.getNumber();
 				    if (ruleIter.hasNext()){ ruleString += "|";}
 				}
 				ruleString+="}\n";
+				
 			}
-
+			
 			// write archive files and bzip it
 			String tDir = System.getProperty("resources/");
 			
@@ -241,6 +252,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			System.out.println(print);
 			log += print +"\n";
 			writeLogFile(input.getAbsolutePath().substring(0,input.getAbsolutePath().lastIndexOf(File.separator)), log);
+//			System.out.println(ruleString);
 		}
 	
 	
