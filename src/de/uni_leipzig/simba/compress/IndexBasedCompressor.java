@@ -109,12 +109,9 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 
 			String ruleString = "";
 			for(IndexRule rule : dcg.getRules()) {
-				String p = propertyMap.get(rule.getProfile().getProperty());
-				String o = objectMap.get(rule.getProfile().getObject());
-				try{int i = Integer.parseInt(o);
-					o = subjectMap.get(i);
-				} catch(NumberFormatException e){}
-				ruleString += ""+rule.getNumber() +":"+ p +"-"+o+"[";
+				ruleString += rule.getNumber() + ":" +
+				    rule.getProfile().getProperty() + "-" +
+				    rule.getProfile().getObject() + "[";
 				Iterator ruleIter = rule.getProfile().getSubjects().iterator();
 				while (ruleIter.hasNext()){
 				    ruleString += subjectMap.get(ruleIter.next());
