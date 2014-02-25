@@ -3,6 +3,7 @@ package de.uni_leipzig.simba.compress;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
@@ -53,11 +54,12 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	}
 
 	 public void compress(File input) {
+		 String log = "";
 		 	long start = System.currentTimeMillis();
 			Model model = FileManager.get().loadModel( input.toString() );
 		
-			StringWriter graphOutput = new StringWriter();
-			model.write(graphOutput, "TURTLE");
+//			StringWriter graphOutput = new StringWriter();
+//			model.write(graphOutput, "TURTLE");
 //			System.out.println(graphOutput);
 			
 			shortToUri.putAll(model.getNsPrefixMap());
@@ -67,8 +69,9 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		
 			StmtIterator iter = model.listStatements();
 			long middle = System.currentTimeMillis();
-
-			System.out.println("Loading model took: " + (middle-start) + " milli seconds");
+			String print = "Loading model took: " + (middle-start) + " milli seconds";
+			System.out.println(print);
+			log += print +"\n";
 			
 			while( iter.hasNext() ){
 				Statement stmt = iter.next();
@@ -98,13 +101,19 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				dcg.addRule(rule);
 				
 			}
-			System.out.println("Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds");
+			print = "Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
+			System.out.println(print);
+			log += print +"\n";
 			middle = System.currentTimeMillis();
 			dcg.computeSuperRules();
-			System.out.println("Computing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds");
+			print = "RComputing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
+			System.out.println(print);
+			log += print +"\n";
 			middle = System.currentTimeMillis();
 			dcg.removeRedundantParentRules();
-			System.out.println("Removing redundancies: " + (System.currentTimeMillis()-middle) + " milli seconds");
+			print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
+			System.out.println(print);
+			log += print +"\n";
 			System.out.println("\nCompressed graph:\n"+dcg);
 			middle = System.currentTimeMillis();
 			// serialize prefixes
@@ -140,7 +149,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			}
 
 			// write archive files and bzip it
-			String tDir = System.getProperty("java.io.tmpdir");
+			String tDir = System.getProperty("resources/");
 			
 			try{
 			    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".tar.bz2");
@@ -225,12 +234,31 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			catch (IOException ioe){
 				System.out.println(ioe);
 			}
-			System.out.println("Serializing: " + (System.currentTimeMillis()-middle) + " milli seconds");
-			System.out.println("Overall: " + (System.currentTimeMillis()-start) + " milli seconds");
-			System.out.println("Overall: " + (System.currentTimeMillis()-start)/1000 + " seconds");
+			print = "Serializing: : " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
+			System.out.println(print);
+			log += print +"\n";
+			print = "Overall : " + (System.currentTimeMillis()-start) + " milli seconds =" + (System.currentTimeMillis()-start)/1000 +" seconds";
+			System.out.println(print);
+			log += print +"\n";
+			writeLogFile(input.getAbsolutePath().substring(0,input.getAbsolutePath().lastIndexOf(File.separator)), log);
 		}
 	
 	
+	private void writeLogFile(String path, String log) {
+		File logFile = new File(path + "/" + "log.txt");
+		try {
+			
+			FileWriter writer =  new FileWriter(logFile, false);
+			writer.write(log);
+			writer.write(System.getProperty("line.separator"));
+			writer.flush();
+			writer.close();
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+
 	@Override
 	public void addAbbreviation(String sURI, String fullURI) {
 		shortToUri.put(sURI, fullURI);
