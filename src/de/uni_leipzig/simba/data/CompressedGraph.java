@@ -4,8 +4,6 @@ package de.uni_leipzig.simba.data;
 
 import java.util.List;
 
-import com.hp.hpl.jena.graph.Graph;
-import com.hp.hpl.jena.rdf.model.Model;
 
 /**
  * implements Serializable
