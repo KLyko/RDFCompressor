@@ -3,11 +3,15 @@ package de.uni_leipzig.simba.compress;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
@@ -43,11 +47,13 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	}
 	
 	 public void compress(File input) {
+		 String log = "";
+		 	long start = System.currentTimeMillis();
 			Model model = FileManager.get().loadModel( input.toString() );
 		
-			StringWriter graphOutput = new StringWriter();
-			model.write(graphOutput, "TURTLE");
-			System.out.println(graphOutput);
+//			StringWriter graphOutput = new StringWriter();
+//			model.write(graphOutput, "TURTLE");
+//			System.out.println(graphOutput);
 			
 			shortToUri.putAll(model.getNsPrefixMap());
 			
@@ -55,6 +61,11 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			IndexCompressedGraph dcg = new IndexCompressedGraph();
 		
 			StmtIterator iter = model.listStatements();
+			long middle = System.currentTimeMillis();
+			String print = "Loading model took: " + (middle-start) + " milli seconds";
+			System.out.println(print);
+			log += print +"\n";
+			
 			while( iter.hasNext() ){
 				Statement stmt = iter.next();
 				
@@ -73,7 +84,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					o = model.shortForm(o);
 				} catch(NullPointerException npe){ /*bnode*/ }
 				
-				System.out.println(s + " -- " + p + " -- " + o);
+//				System.out.println(s + " -- " + p + " -- " + o);
 				int indexS = addIndex(s, SPO.SUBJECT);
 				int indexP = addIndex(p, SPO.PREDICATE);
 				int indexO = addIndex(o, SPO.OBJECT);
@@ -81,12 +92,23 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				profile.addSubject(indexS);
 				IndexRule rule = new IndexRule(profile);
 				dcg.addRule(rule);
+				
 			}
-			
+			print = "Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
+			System.out.println(print);
+			log += print +"\n";
+			middle = System.currentTimeMillis();
 			dcg.computeSuperRules();
+			print = "RComputing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
+			System.out.println(print);
+			log += print +"\n";
+			middle = System.currentTimeMillis();
 			dcg.removeRedundantParentRules();
-			System.out.println("\nCompressed graph:\n"+dcg);
-
+			print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
+			System.out.println(print);
+			log += print +"\n";
+//			System.out.println("\nCompressed graph:\n"+dcg);
+			middle = System.currentTimeMillis();
 			// serialize prefixes
 			String prefixes = "";
 			for (Entry<String, String> entry : model.getNsPrefixMap().entrySet()) {
@@ -100,24 +122,32 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				    rule.getProfile().getProperty() + "-" +
 				    rule.getProfile().getObject() + "[";
 				Iterator ruleIter = rule.getProfile().getSubjects().iterator();
-				while (ruleIter.hasNext()){
-				    ruleString += subjectMap.get(ruleIter.next());
-				    if (ruleIter.hasNext()){ ruleString += "|";}
+				List<Integer> subjects = new LinkedList();
+				subjects.addAll(rule.getProfile().getSubjects());
+				Collections.sort(subjects);
+				int offset = 0;
+				for(int i=0; i<subjects.size();i++) {
+					int val = subjects.get(i);
+					ruleString += val-offset;
+					offset = val;
+					 if (i<subjects.size()-1){ ruleString += "|";}
 				}
-
 				ruleString +="]";
 				ruleString+="{";
+				offset = 0;
 				ruleIter = rule.getParents().iterator();
 				while (ruleIter.hasNext()){
 				    IRule sr = (IRule) ruleIter.next();
-				    ruleString += sr.getNumber();
+				    ruleString += sr.getNumber()-offset;
+				    offset= sr.getNumber();
 				    if (ruleIter.hasNext()){ ruleString += "|";}
 				}
 				ruleString+="}\n";
+				
 			}
-
+			
 			// write archive files and bzip it
-			String tDir = System.getProperty("java.io.tmpdir");
+			String tDir = System.getProperty("resources/");
 			
 			try{
 			    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".tar.bz2");
@@ -184,7 +214,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 
 			    // write rules
 			    OutputStream osRule = new FileOutputStream(tDir + "rules");
-			    System.out.println("#######"+ruleString);
+//			    System.out.println("#######"+ruleString);
 			    osRule.write(ruleString.getBytes());
 			    osRule.close();
 			    File fileRule = new File(tDir + "rules");
@@ -202,9 +232,32 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			catch (IOException ioe){
 				System.out.println(ioe);
 			}
+			print = "Serializing: : " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
+			System.out.println(print);
+			log += print +"\n";
+			print = "Overall : " + (System.currentTimeMillis()-start) + " milli seconds =" + (System.currentTimeMillis()-start)/1000 +" seconds";
+			System.out.println(print);
+			log += print +"\n";
+			writeLogFile(input.getAbsolutePath().substring(0,input.getAbsolutePath().lastIndexOf(File.separator)), log);
+//			System.out.println(ruleString);
 		}
 	
 	
+	private void writeLogFile(String path, String log) {
+		File logFile = new File(path + "/" + "log.txt");
+		try {
+			
+			FileWriter writer =  new FileWriter(logFile, false);
+			writer.write(log);
+			writer.write(System.getProperty("line.separator"));
+			writer.flush();
+			writer.close();
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+
 	@Override
 	public void addAbbreviation(String sURI, String fullURI) {
 		shortToUri.put(sURI, fullURI);

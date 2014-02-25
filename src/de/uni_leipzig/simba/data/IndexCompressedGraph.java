@@ -31,7 +31,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 			rules.add(r);
 			ruleHash.add(r);
 		} else {
-			logger.info("Not adding redundant rule");
+//			logger.info("Not adding redundant rule");
 			int nr = -1; IndexRule o;
 			Iterator<IndexRule> it = ruleHash.iterator();
 			while(it.hasNext()) {
@@ -94,8 +94,11 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	@Override
 	public void removeRedundantParentRules() {
 		for(IndexRule r : rules) {
+			List<IRule<IndexProfile>> copy =new LinkedList();
+			copy.addAll(r.parents);
 			for(IRule<IndexProfile> parent : r.parents)
-				r.parents.removeAll(parent.getParents());
+				copy.removeAll(parent.getParents());
+			r.parents = copy;
 		}
 	}
 	
