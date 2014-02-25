@@ -4,8 +4,6 @@ package de.uni_leipzig.simba.data;
 
 import java.util.List;
 
-import com.hp.hpl.jena.graph.Graph;
-import com.hp.hpl.jena.rdf.model.Model;
 
 /**
  * implements Serializable
@@ -42,6 +40,12 @@ public interface CompressedGraph<IRule> {
 	 * @TODO is there an more time-wise efficient way of computing while generating the proiles?
 	 */
 	public void computeSuperRules();
+	
+	/**
+	 * Method to remove redundant parent Rules. These are those parents which are also parents of the parent
+	 * Example: r1 => r2, r0 and r2 => r0.  We can remove r0 from the parents of r1.
+	 */
+	public void removeRedundantParentRules();
 	
 	/**
 	 * Computes the size, which is the sum of all URIs in all rules. 
