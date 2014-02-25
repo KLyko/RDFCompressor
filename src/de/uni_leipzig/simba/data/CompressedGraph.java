@@ -42,6 +42,12 @@ public interface CompressedGraph<IRule> {
 	public void computeSuperRules();
 	
 	/**
+	 * Method to remove redundant parent Rules. These are those parents which are also parents of the parent
+	 * Example: r1 => r2, r0 and r2 => r0.  We can remove r0 from the parents of r1.
+	 */
+	public void removeRedundantParentRules();
+	
+	/**
 	 * Computes the size, which is the sum of all URIs in all rules. 
 	 * @return
 	 */

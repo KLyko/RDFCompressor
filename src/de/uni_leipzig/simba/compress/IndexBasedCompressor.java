@@ -93,6 +93,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			}
 			
 			dcg.computeSuperRules();
+			dcg.removeRedundantParentRules();
 			System.out.println("\nCompressed graph:\n"+dcg);
 
 			// serialize prefixes and put them to the archive

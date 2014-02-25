@@ -49,7 +49,6 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	}
 	
 
-	
 	public Set<IndexRule> getSuperRules(IndexRule r) {
 		HashSet<IndexRule> result = new HashSet<IndexRule>();
 		// Collections.sort(rules);
@@ -61,13 +60,21 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 						!r.profile.subjects.isEmpty() && // isn't empty
 						o.profile.subjects.containsAll(r.profile.subjects)// other contains all uris of r
 						&& !o.parents.contains(r)) // avoid double linking to parent
-				{result.add(o);}	
+				{
+//					boolean add = true;
+//					for(IRule another : r.parents) {
+//						if(another.equals(o))
+//							add = false;
+//					}
+//					if(add)
+						result.add(o);				
+				}
 			}
 		}
 		return result;
 	}
 
-
+	@Override
 	public void computeSuperRules() {
 		//TODO is this really benefficial?
 //		Collections.sort(rules);
@@ -84,6 +91,14 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 		}
 	}
 
+	@Override
+	public void removeRedundantParentRules() {
+		for(IndexRule r : rules) {
+			for(IRule<IndexProfile> parent : r.parents)
+				r.parents.removeAll(parent.getParents());
+		}
+	}
+	
     public String toString(){
 	String s = "";
 	for (IndexRule rule : this.rules){

@@ -101,6 +101,14 @@ public class DefaultCompressedGraph implements CompressedGraph<Rule>{
 			}
 		}
 	}
+	
+	@Override
+	public void removeRedundantParentRules() {
+		for(Rule r : rules) {
+			for(IRule<Profile> parent : r.parents)
+				r.parents.removeAll(parent.getParents());
+		}
+	}
 
     public String toString(){
 	String s = "";
