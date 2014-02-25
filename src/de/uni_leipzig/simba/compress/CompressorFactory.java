@@ -2,7 +2,7 @@ package de.uni_leipzig.simba.compress;
 
 public class CompressorFactory {
 	
-	enum Type {
+	public enum Type {
 		INDEX
 	}
 	

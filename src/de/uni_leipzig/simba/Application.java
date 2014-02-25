@@ -4,6 +4,7 @@ import java.io.File;
 
 import de.uni_leipzig.simba.compress.Compressor;
 import de.uni_leipzig.simba.compress.CompressorFactory;
+import de.uni_leipzig.simba.compress.CompressorFactory.Type;
 import de.uni_leipzig.simba.compress.IndexBasedCompressor;
 
 public class Application{
@@ -15,7 +16,7 @@ public class Application{
 		File path = new File(args[1]);
 		if (path.exists()){
 		    CompressorFactory cf = new CompressorFactory();
-		    Compressor compressor = cf.getCompressor();
+		    Compressor compressor = cf.getCompressor(Type.INDEX);
 		    compressor.compress(path);
 		}
 	    }

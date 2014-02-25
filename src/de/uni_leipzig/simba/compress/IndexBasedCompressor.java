@@ -1,6 +1,7 @@
 package de.uni_leipzig.simba.compress;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -9,6 +10,10 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.utils.IOUtils;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Statement;
@@ -86,38 +91,28 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				IndexRule rule = new IndexRule(profile);
 				dcg.addRule(rule);
 			}
+			
 			dcg.computeSuperRules();
 			System.out.println("\nCompressed graph:\n"+dcg);
+
+			// serialize prefixes and put them to the archive
 			String prefixes = "";
 			for (Entry<String, String> entry : model.getNsPrefixMap().entrySet()) {
 				prefixes += entry.getKey() + "|" + entry.getValue() + "\n";
 			}
 			prefixes += "\n";
-			// serialize inverse list
-			dcg.computeSuperRules();
-		
-			String output = dcg.serialize();
-			System.out.println("Serialized compressed graph:\n" + output);
-			// compress with bzip2
-			try{
-				OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".bz2");
-				OutputStream bzos = new BZip2CompressorOutputStream(os);
-				bzos.write(prefixes.getBytes());
-				bzos.write(output.getBytes());
-				bzos.close();
-				os.close();
-			}
-			catch (IOException ioe){
-				System.out.println(ioe);
-			}
-			writeIndexFiles();
+
+			// String output = dcg.serialize();
+			// System.out.println("Serialized compressed graph:\n" + output);
+
+			String ruleString = "";
 			for(IndexRule rule : dcg.getRules()) {
 				String p = propertyMap.get(rule.getProfile().getProperty());
 				String o = objectMap.get(rule.getProfile().getObject());
 				try{int i = Integer.parseInt(o);
 					o = subjectMap.get(i);
 				} catch(NumberFormatException e){}
-				String  ruleString = ""+rule.getNumber() +": "+ p +"-"+o+" [";
+				ruleString += ""+rule.getNumber() +": "+ p +"-"+o+" [";
 					for(int s : rule.getProfile().getSubjects()) {
 						ruleString+=subjectMap.get(s)+" | ";
 					}
@@ -126,10 +121,81 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				for(IRule sr : rule.getParents()) {
 					ruleString += sr.getNumber() +"|";
 				}
-				ruleString+="}";
-				System.out.println(ruleString);
+				ruleString+="}\n";
 			}
-//			dcg.finalize();
+
+			// write archive files and bzip it
+			String tDir = System.getProperty("java.io.tmpdir");
+			
+			try{
+			    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".tar.bz2");
+			    OutputStream bzos = new BZip2CompressorOutputStream(os);
+			    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
+
+			    // write prefixes
+			    OutputStream osPrefix = new FileOutputStream(tDir + "prefixes");
+			    osPrefix.write(prefixes.getBytes());
+			    osPrefix.close();
+			    File filePrefix = new File(tDir + "prefixes");
+			    TarArchiveEntry entry = new TarArchiveEntry(filePrefix, "prefixes");
+			    entry.setSize(filePrefix.length());
+			    aos.putArchiveEntry(entry);
+			    IOUtils.copy(new FileInputStream(filePrefix), aos);
+			    aos.closeArchiveEntry();
+
+			    // write subject index
+			    OutputStream osSubject = new FileOutputStream(tDir + "subjects");
+			    osSubject.write(this.subjectMap.toString().getBytes());
+			    osSubject.close();
+			    File fileSubject = new File(tDir + "subjects");
+			    entry = new TarArchiveEntry(fileSubject, "subjects");
+			    entry.setSize(fileSubject.length());
+			    aos.putArchiveEntry(entry);
+			    IOUtils.copy(new FileInputStream(fileSubject), aos);
+			    aos.closeArchiveEntry();
+
+			    // write object index
+			    OutputStream osObject = new FileOutputStream(tDir + "objects");
+			    osObject.write(this.objectMap.toString().getBytes());
+			    osObject.close();
+			    File fileObject = new File(tDir + "objects");
+			    entry = new TarArchiveEntry(fileObject, "objects");
+			    entry.setSize(fileObject.length());
+			    aos.putArchiveEntry(entry);
+			    IOUtils.copy(new FileInputStream(fileObject), aos);
+			    aos.closeArchiveEntry();
+
+			    // write property index
+			    OutputStream osProperty = new FileOutputStream(tDir + "properties");
+			    osProperty.write(this.propertyMap.toString().getBytes());
+			    osProperty.close();
+			    File fileProperty = new File(tDir + "properties");
+			    entry = new TarArchiveEntry(fileProperty, "properties");
+			    entry.setSize(fileProperty.length());
+			    aos.putArchiveEntry(entry);
+			    IOUtils.copy(new FileInputStream(fileProperty), aos);
+			    aos.closeArchiveEntry();
+
+			    // write rules
+			    OutputStream osRule = new FileOutputStream(tDir + "rules");
+			    System.out.println("#######"+ruleString);
+			    osRule.write(ruleString.getBytes());
+			    osRule.close();
+			    File fileRule = new File(tDir + "rules");
+			    entry = new TarArchiveEntry(fileRule, "rules");
+			    entry.setSize(fileRule.length());
+			    aos.putArchiveEntry(entry);
+			    IOUtils.copy(new FileInputStream(fileRule), aos);
+			    aos.closeArchiveEntry();
+			    
+			    aos.finish();
+			    aos.close();
+			    bzos.close();
+			    os.close();
+			}
+			catch (IOException ioe){
+				System.out.println(ioe);
+			}
 		}
 	
 	
