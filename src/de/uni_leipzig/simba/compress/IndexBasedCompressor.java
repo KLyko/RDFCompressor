@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map.Entry;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
@@ -118,19 +119,22 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 
 			String ruleString = "";
 			for(IndexRule rule : dcg.getRules()) {
-				String p = propertyMap.get(rule.getProfile().getProperty());
-				String o = objectMap.get(rule.getProfile().getObject());
-				try{int i = Integer.parseInt(o);
-					o = subjectMap.get(i);
-				} catch(NumberFormatException e){}
-				ruleString += ""+rule.getNumber() +": "+ p +"-"+o+" [";
-					for(int s : rule.getProfile().getSubjects()) {
-						ruleString+=subjectMap.get(s)+" | ";
-					}
-				ruleString +="] ";
-				ruleString+=" {";
-				for(IRule sr : rule.getParents()) {
-					ruleString += sr.getNumber() +"|";
+				ruleString += rule.getNumber() + ":" +
+				    rule.getProfile().getProperty() + "-" +
+				    rule.getProfile().getObject() + "[";
+				Iterator ruleIter = rule.getProfile().getSubjects().iterator();
+				while (ruleIter.hasNext()){
+				    ruleString += subjectMap.get(ruleIter.next());
+				    if (ruleIter.hasNext()){ ruleString += "|";}
+				}
+
+				ruleString +="]";
+				ruleString+="{";
+				ruleIter = rule.getParents().iterator();
+				while (ruleIter.hasNext()){
+				    IRule sr = (IRule) ruleIter.next();
+				    ruleString += sr.getNumber();
+				    if (ruleIter.hasNext()){ ruleString += "|";}
 				}
 				ruleString+="}\n";
 			}
