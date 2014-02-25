@@ -19,9 +19,4 @@ public interface IndexBasedCompressorInterface {
 	 * @return newly created of existed index.
 	 */
 	public int addIndex(String uri, SPO SPOrO);
-	
-	/**
-	 * Serialize IndexFile, for later compression
-	 */
-	public void writeIndexFiles();
 }

@@ -42,16 +42,6 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		//nothing to do here so far.
 	}
 	
-
-	@Override
-	public void writeIndexFiles() {
-		// TODO Auto-generated method stub
-		System.out.println("short-to-uri\n====="+shortToUri);
-		System.out.println("subjectMap\n====="+subjectMap);
-		System.out.println("predicateMap\n====="+propertyMap);
-		System.out.println("objectMap\n====="+objectMap);
-	}
-
 	 public void compress(File input) {
 			Model model = FileManager.get().loadModel( input.toString() );
 		
@@ -103,9 +93,6 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				prefixes += entry.getKey() + "|" + entry.getValue() + "\n";
 			}
 			prefixes += "\n";
-
-			// String output = dcg.serialize();
-			// System.out.println("Serialized compressed graph:\n" + output);
 
 			String ruleString = "";
 			for(IndexRule rule : dcg.getRules()) {
