@@ -95,7 +95,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			dcg.computeSuperRules();
 			System.out.println("\nCompressed graph:\n"+dcg);
 
-			// serialize prefixes and put them to the archive
+			// serialize prefixes
 			String prefixes = "";
 			for (Entry<String, String> entry : model.getNsPrefixMap().entrySet()) {
 				prefixes += entry.getKey() + "|" + entry.getValue() + "\n";
@@ -144,8 +144,12 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			    aos.closeArchiveEntry();
 
 			    // write subject index
+			    String subjectString = "";
+			    for (Entry<Integer, String> subject : this.subjectMap.entrySet()) {
+				subjectString += subject.getKey() + "|" + subject.getValue() + "\n";
+			    }
 			    OutputStream osSubject = new FileOutputStream(tDir + "subjects");
-			    osSubject.write(this.subjectMap.toString().getBytes());
+			    osSubject.write(subjectString.getBytes());
 			    osSubject.close();
 			    File fileSubject = new File(tDir + "subjects");
 			    entry = new TarArchiveEntry(fileSubject, "subjects");
@@ -155,8 +159,13 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			    aos.closeArchiveEntry();
 
 			    // write object index
+			    String objectString = "";
+			    for (Entry<Integer, String> object : this.objectMap.entrySet()) {
+				objectString += object.getKey() + "|" + object.getValue() + "\n";
+			    }
+
 			    OutputStream osObject = new FileOutputStream(tDir + "objects");
-			    osObject.write(this.objectMap.toString().getBytes());
+			    osObject.write(objectString.getBytes());
 			    osObject.close();
 			    File fileObject = new File(tDir + "objects");
 			    entry = new TarArchiveEntry(fileObject, "objects");
@@ -166,8 +175,13 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			    aos.closeArchiveEntry();
 
 			    // write property index
+			    String propertyString = "";
+			    for (Entry<Integer, String> property : this.propertyMap.entrySet()) {
+				propertyString += property.getKey() + "|" + property.getValue() + "\n";
+			    }
+
 			    OutputStream osProperty = new FileOutputStream(tDir + "properties");
-			    osProperty.write(this.propertyMap.toString().getBytes());
+			    osProperty.write(propertyString.getBytes());
 			    osProperty.close();
 			    File fileProperty = new File(tDir + "properties");
 			    entry = new TarArchiveEntry(fileProperty, "properties");
