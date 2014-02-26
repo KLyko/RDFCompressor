@@ -112,12 +112,17 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 //			System.out.println("\nCompressed graph:\n"+dcg);
 			middle = System.currentTimeMillis();
 
-			String ruleString = "";
-			for(IndexRule rule : dcg.getRules()) {
+			try{
+
+			    ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+			    for(IndexRule rule : dcg.getRules()) {
   			        IndexProfile profile = rule.getProfile();
-				ruleString += rule.getNumber() + ":" +
-				    profile.getProperty() + "-" +
-				    profile.getObject() + "[";
+				outputStream.write(Integer.toString(rule.getNumber()).getBytes());
+				outputStream.write(":".getBytes());
+				outputStream.write(profile.getProperty().toString().getBytes());
+				outputStream.write("|".getBytes());
+				outputStream.write(profile.getObject().toString().getBytes());
+				outputStream.write("[".getBytes());
 				Iterator ruleIter = profile.getSubjects().iterator();
 				List<Integer> subjects = new LinkedList();
 				subjects.addAll(profile.getSubjects());
@@ -125,32 +130,36 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				int offset = 0;
 				for(int i=0; i<subjects.size();i++) {
 					int val = subjects.get(i);
-					ruleString += val-offset;
+					outputStream.write(Integer.toString(val-offset).getBytes());
 					offset = val;
-					 if (i<subjects.size()-1){ ruleString += "|";}
+					if (i<subjects.size()-1){
+					    outputStream.write("|".getBytes());
+					}
 				}
-				ruleString +="]";
-				ruleString+="{";
+				outputStream.write("]".getBytes());
+				outputStream.write("{".getBytes());
 				offset = 0;
 				ruleIter = rule.getParents().iterator();
 				while (ruleIter.hasNext()){
 				    IRule sr = (IRule) ruleIter.next();
-				    ruleString += sr.getNumber()-offset;
+				    outputStream.write(Integer.toString(sr.getNumber()-offset).getBytes());
 				    offset= sr.getNumber();
-				    if (ruleIter.hasNext()){ ruleString += "|";}
+				    if (ruleIter.hasNext()){
+					outputStream.write("|".getBytes());
+				    }
 				}
-				ruleString+="}\n";
-				
-			}
-			middle2 = System.currentTimeMillis();
+				outputStream.write("}\n".getBytes());
+			    }
+			    byte rules[] = outputStream.toByteArray( );
 			
-			try{
+			    middle2 = System.currentTimeMillis();
+			
 			    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".tar.bz2");
 			    OutputStream bzos = new BZip2CompressorOutputStream(os);
 			    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
 
 			    // write prefixes
-			    ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+			    outputStream = new ByteArrayOutputStream( );
 
 			    for (Entry<String, String>  entry : model.getNsPrefixMap().entrySet()) {
 			    	outputStream.write( entry.getKey().getBytes());
@@ -219,9 +228,9 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 
 			    // write rules
 			    entry = new TarArchiveEntry("rules");
-			    entry.setSize(ruleString.getBytes().length);
+			    entry.setSize(rules.length);
 			    aos.putArchiveEntry(entry);
-			    aos.write(ruleString.getBytes());
+			    aos.write(rules);
 			    aos.closeArchiveEntry();
 			    
 			    aos.finish();
