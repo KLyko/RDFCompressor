@@ -252,7 +252,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	
 	
 	private void writeLogFile(File source, String log) {
-		File logFile = new File("source.getAbsolutePath()+_log.txt");
+		File logFile = new File(source.getAbsolutePath()+"_log.txt");
 		try {
 			
 			FileWriter writer =  new FileWriter(logFile, false);
