@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.StringWriter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.utils.IOUtils;
@@ -41,7 +39,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	HashMap<Integer, String> subjectMap = new HashMap();
 	HashMap<Integer, String> objectMap = new HashMap();
 	HashMap<Integer, String> propertyMap = new HashMap();
-	
+
 	public IndexBasedCompressor() {
 		//nothing to do here so far.
 	}
@@ -251,13 +249,13 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			print = "Overall : " + (System.currentTimeMillis()-start) + " milli seconds =" + (System.currentTimeMillis()-start)/1000 +" seconds";
 			System.out.println(print);
 			log += print +"\n";
-			writeLogFile(input.getAbsolutePath().substring(0,input.getAbsolutePath().lastIndexOf(File.separator)), log);
+			writeLogFile(input, log);
 //			System.out.println(ruleString);
 		}
 	
 	
-	private void writeLogFile(String path, String log) {
-		File logFile = new File(path + "/" + "log.txt");
+	private void writeLogFile(File source, String log) {
+		File logFile = new File("source.getAbsolutePath()+_log.txt");
 		try {
 			
 			FileWriter writer =  new FileWriter(logFile, false);
