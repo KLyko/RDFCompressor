@@ -117,8 +117,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			    ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
 			    for(IndexRule rule : dcg.getRules()) {
   			        IndexProfile profile = rule.getProfile();
-				outputStream.write(Integer.toString(rule.getNumber()).getBytes());
-				outputStream.write(":".getBytes());
+				//outputStream.write(Integer.toString(rule.getNumber()).getBytes());
+				//outputStream.write(":".getBytes());
 				outputStream.write(profile.getProperty().toString().getBytes());
 				outputStream.write("|".getBytes());
 				outputStream.write(profile.getObject().toString().getBytes());
