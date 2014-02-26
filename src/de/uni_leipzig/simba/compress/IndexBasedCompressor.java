@@ -1,5 +1,6 @@
 package de.uni_leipzig.simba.compress;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -44,16 +45,6 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		//nothing to do here so far.
 	}
 	
-
-	@Override
-	public void writeIndexFiles() {
-		// TODO Auto-generated method stub
-//		System.out.println("short-to-uri\n====="+shortToUri);
-//		System.out.println("subjectMap\n====="+subjectMap);
-//		System.out.println("predicateMap\n====="+propertyMap);
-//		System.out.println("objectMap\n====="+objectMap);
-	}
-
 	 public void compress(File input) {
 		 String log = "";
 		 	long start = System.currentTimeMillis();
@@ -70,6 +61,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		
 			StmtIterator iter = model.listStatements();
 			long middle = System.currentTimeMillis();
+			long middle2 = System.currentTimeMillis();
 			String print = "Loading model took: " + (middle-start) + " milli seconds";
 			System.out.println(print);
 			log += print +"\n";
@@ -117,122 +109,126 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			log += print +"\n";
 //			System.out.println("\nCompressed graph:\n"+dcg);
 			middle = System.currentTimeMillis();
-			// serialize prefixes
-			String prefixes = "";
-			for (Entry<String, String> entry : model.getNsPrefixMap().entrySet()) {
-				prefixes += entry.getKey() + "|" + entry.getValue() + "\n";
-			}
-			prefixes += "\n";
 
-			// String output = dcg.serialize();
-			// System.out.println("Serialized compressed graph:\n" + output);
+			try{
 
-			String ruleString = "";
-			for(IndexRule rule : dcg.getRules()) {
-				ruleString += rule.getNumber() + ":" +
-				    rule.getProfile().getProperty() + "-" +
-				    rule.getProfile().getObject() + "[";
-				Iterator ruleIter = rule.getProfile().getSubjects().iterator();
+			    ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+			    for(IndexRule rule : dcg.getRules()) {
+  			        IndexProfile profile = rule.getProfile();
+				outputStream.write(Integer.toString(rule.getNumber()).getBytes());
+				outputStream.write(":".getBytes());
+				outputStream.write(profile.getProperty().toString().getBytes());
+				outputStream.write("|".getBytes());
+				outputStream.write(profile.getObject().toString().getBytes());
+				outputStream.write("[".getBytes());
+				Iterator ruleIter = profile.getSubjects().iterator();
 				List<Integer> subjects = new LinkedList();
-				subjects.addAll(rule.getProfile().getSubjects());
+				subjects.addAll(profile.getSubjects());
 				Collections.sort(subjects);
 				int offset = 0;
 				for(int i=0; i<subjects.size();i++) {
 					int val = subjects.get(i);
-					ruleString += val-offset;
+					outputStream.write(Integer.toString(val-offset).getBytes());
 					offset = val;
-					 if (i<subjects.size()-1){ ruleString += "|";}
+					if (i<subjects.size()-1){
+					    outputStream.write("|".getBytes());
+					}
 				}
-				ruleString +="]";
-				ruleString+="{";
+				outputStream.write("]".getBytes());
+				outputStream.write("{".getBytes());
 				offset = 0;
 				ruleIter = rule.getParents().iterator();
 				while (ruleIter.hasNext()){
 				    IRule sr = (IRule) ruleIter.next();
-				    ruleString += sr.getNumber()-offset;
+				    outputStream.write(Integer.toString(sr.getNumber()-offset).getBytes());
 				    offset= sr.getNumber();
-				    if (ruleIter.hasNext()){ ruleString += "|";}
+				    if (ruleIter.hasNext()){
+					outputStream.write("|".getBytes());
+				    }
 				}
-				ruleString+="}\n";
-				
-			}
+				outputStream.write("}\n".getBytes());
+			    }
+			    byte rules[] = outputStream.toByteArray( );
 			
-			// write archive files and bzip it
-			String tDir = System.getProperty("resources/");
+			    middle2 = System.currentTimeMillis();
 			
-			try{
 			    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".tar.bz2");
 			    OutputStream bzos = new BZip2CompressorOutputStream(os);
 			    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
 
 			    // write prefixes
-			    OutputStream osPrefix = new FileOutputStream(tDir + "prefixes");
-			    osPrefix.write(prefixes.getBytes());
-			    osPrefix.close();
-			    File filePrefix = new File(tDir + "prefixes");
-			    TarArchiveEntry entry = new TarArchiveEntry(filePrefix, "prefixes");
-			    entry.setSize(filePrefix.length());
+			    outputStream = new ByteArrayOutputStream( );
+
+			    for (Entry<String, String>  entry : model.getNsPrefixMap().entrySet()) {
+			    	outputStream.write( entry.getKey().getBytes());
+			    	outputStream.write( "|".getBytes());
+			    	outputStream.write( entry.getValue().getBytes());
+			    	outputStream.write( "\n".getBytes());
+			    }
+			    byte prefixes[] = outputStream.toByteArray( );
+
+			    TarArchiveEntry entry = new TarArchiveEntry("prefixes");
+			    entry.setSize(prefixes.length);
 			    aos.putArchiveEntry(entry);
-			    IOUtils.copy(new FileInputStream(filePrefix), aos);
+			    aos.write(prefixes);
 			    aos.closeArchiveEntry();
 
 			    // write subject index
-			    String subjectString = "";
+			    outputStream = new ByteArrayOutputStream( );
+
 			    for (Entry<Integer, String> subject : this.subjectMap.entrySet()) {
-				subjectString += subject.getKey() + "|" + subject.getValue() + "\n";
+			    	outputStream.write( subject.getKey().toString().getBytes());
+			    	outputStream.write( "|".getBytes());
+			    	outputStream.write( subject.getValue().getBytes());
+			    	outputStream.write( "\n".getBytes());
 			    }
-			    OutputStream osSubject = new FileOutputStream(tDir + "subjects");
-			    osSubject.write(subjectString.getBytes());
-			    osSubject.close();
-			    File fileSubject = new File(tDir + "subjects");
-			    entry = new TarArchiveEntry(fileSubject, "subjects");
-			    entry.setSize(fileSubject.length());
+			    byte subjects[] = outputStream.toByteArray( );
+
+			    entry = new TarArchiveEntry("subjects");
+			    entry.setSize(subjects.length);
 			    aos.putArchiveEntry(entry);
-			    IOUtils.copy(new FileInputStream(fileSubject), aos);
+			    aos.write(subjects);
 			    aos.closeArchiveEntry();
 
 			    // write object index
-			    String objectString = "";
-			    for (Entry<Integer, String> object : this.objectMap.entrySet()) {
-				objectString += object.getKey() + "|" + object.getValue() + "\n";
-			    }
+			    outputStream = new ByteArrayOutputStream( );
 
-			    OutputStream osObject = new FileOutputStream(tDir + "objects");
-			    osObject.write(objectString.getBytes());
-			    osObject.close();
-			    File fileObject = new File(tDir + "objects");
-			    entry = new TarArchiveEntry(fileObject, "objects");
-			    entry.setSize(fileObject.length());
+			    for (Entry<Integer, String> object : this.objectMap.entrySet()) {
+			    	outputStream.write( object.getKey().toString().getBytes());
+			    	outputStream.write( "|".getBytes());
+			    	outputStream.write( object.getValue().getBytes());
+			    	outputStream.write( "\n".getBytes());
+			    }
+			    byte objects[] = outputStream.toByteArray( );
+
+			    entry = new TarArchiveEntry("objects");
+			    entry.setSize(objects.length);
 			    aos.putArchiveEntry(entry);
-			    IOUtils.copy(new FileInputStream(fileObject), aos);
+			    aos.write(objects);
 			    aos.closeArchiveEntry();
 
 			    // write property index
-			    String propertyString = "";
-			    for (Entry<Integer, String> property : this.propertyMap.entrySet()) {
-				propertyString += property.getKey() + "|" + property.getValue() + "\n";
-			    }
+			    outputStream = new ByteArrayOutputStream( );
 
-			    OutputStream osProperty = new FileOutputStream(tDir + "properties");
-			    osProperty.write(propertyString.getBytes());
-			    osProperty.close();
-			    File fileProperty = new File(tDir + "properties");
-			    entry = new TarArchiveEntry(fileProperty, "properties");
-			    entry.setSize(fileProperty.length());
+			    for (Entry<Integer, String> property : this.propertyMap.entrySet()) {
+			    	outputStream.write( property.getKey().toString().getBytes());
+			    	outputStream.write( "|".getBytes());
+			    	outputStream.write( property.getValue().getBytes());
+			    	outputStream.write( "\n".getBytes());
+			    }
+			    byte properties[] = outputStream.toByteArray( );
+			    
+			    entry = new TarArchiveEntry("properties");
+			    entry.setSize(properties.length);
 			    aos.putArchiveEntry(entry);
-			    IOUtils.copy(new FileInputStream(fileProperty), aos);
+			    aos.write(properties);
 			    aos.closeArchiveEntry();
 
 			    // write rules
-			    OutputStream osRule = new FileOutputStream(tDir + "rules");
-//			    System.out.println("#######"+ruleString);
-			    osRule.write(ruleString.getBytes());
-			    osRule.close();
-			    File fileRule = new File(tDir + "rules");
-			    entry = new TarArchiveEntry(fileRule, "rules");
-			    entry.setSize(fileRule.length());
+			    entry = new TarArchiveEntry("rules");
+			    entry.setSize(rules.length);
 			    aos.putArchiveEntry(entry);
-			    IOUtils.copy(new FileInputStream(fileRule), aos);
+			    aos.write(rules);
 			    aos.closeArchiveEntry();
 			    
 			    aos.finish();
@@ -243,7 +239,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			catch (IOException ioe){
 				System.out.println(ioe);
 			}
-			print = "Serializing: : " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
+			print = "Serializing Rulestring: : " + (middle2-middle) + " milli seconds =" + (middle2-middle)/1000 +" seconds";
+			print += "\nWriting files: : " + (System.currentTimeMillis()-middle2) + " milli seconds =" + (System.currentTimeMillis()-middle2)/1000 +" seconds";
 			System.out.println(print);
 			log += print +"\n";
 			print = "Overall : " + (System.currentTimeMillis()-start) + " milli seconds =" + (System.currentTimeMillis()-start)/1000 +" seconds";
