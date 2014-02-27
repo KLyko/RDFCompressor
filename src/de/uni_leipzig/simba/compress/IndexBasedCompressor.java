@@ -33,17 +33,21 @@ import de.uni_leipzig.simba.data.IndexRule;
  *
  */
 public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInterface {
-	
+	String log = "One HashMap for object and subject\n";
 	HashMap<String, String> shortToUri = new HashMap();
 	HashMap<String, Integer> subjectMap = new HashMap();
-	HashMap<String, Integer> objectMap = new HashMap();
+//	HashMap<String, Integer> objectMap = new HashMap();
 	HashMap<String, Integer> propertyMap = new HashMap();
 	public IndexBasedCompressor() {
 		//nothing to do here so far.
 	}
 	
 	 public void compress(File input) {
-		 String log = "";
+		 	log += input.getAbsolutePath()+"\n";
+		 	
+			long byteLength = input.length();
+			log+= "Length in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB\n\n";
+ 			
 		 	long start = System.currentTimeMillis();
 			Model model = FileManager.get().loadModel( input.toString() );
 		
@@ -59,7 +63,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			StmtIterator iter = model.listStatements();
 			long middle = System.currentTimeMillis();
 			long middle2 = System.currentTimeMillis();
-			String print = "Loading model took: " + (middle-start) + " milli seconds";
+			String print = "Loading model took: " + (middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds";
 			System.out.println(print);
 			log += print +"\n";
 			
@@ -104,7 +108,6 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
 			System.out.println(print);
 			log += print +"\n";
-//			System.out.println("\nCompressed graph:\n"+dcg);
 			middle = System.currentTimeMillis();
 
 			try{
@@ -187,22 +190,22 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			    aos.write(subjects);
 			    aos.closeArchiveEntry();
 
-			    // write object index
-			    outputStream = new ByteArrayOutputStream( );
-
-			    for (Entry<String, Integer> object : this.objectMap.entrySet()) {
-			    	outputStream.write( object.getKey().getBytes());
-			    	outputStream.write( "|".getBytes());
-			    	outputStream.write( object.getValue().toString().getBytes());
-			    	outputStream.write( "\n".getBytes());
-			    }
-			    byte objects[] = outputStream.toByteArray( );
-
-			    entry = new TarArchiveEntry("objects");
-			    entry.setSize(objects.length);
-			    aos.putArchiveEntry(entry);
-			    aos.write(objects);
-			    aos.closeArchiveEntry();
+//			    // write object index
+//			    outputStream = new ByteArrayOutputStream( );
+//
+//			    for (Entry<String, Integer> object : this.objectMap.entrySet()) {
+//			    	outputStream.write( object.getKey().getBytes());
+//			    	outputStream.write( "|".getBytes());
+//			    	outputStream.write( object.getValue().toString().getBytes());
+//			    	outputStream.write( "\n".getBytes());
+//			    }
+//			    byte objects[] = outputStream.toByteArray( );
+//
+//			    entry = new TarArchiveEntry("objects");
+//			    entry.setSize(objects.length);
+//			    aos.putArchiveEntry(entry);
+//			    aos.write(objects);
+//			    aos.closeArchiveEntry();
 
 			    // write property index
 			    outputStream = new ByteArrayOutputStream( );
@@ -235,6 +238,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			}
 			catch (IOException ioe){
 				System.out.println(ioe);
+				log += "\nExeption:"+ioe+" \n";
 			}
 			print = "Serializing Rulestring: : " + (middle2-middle) + " milli seconds =" + (middle2-middle)/1000 +" seconds";
 			print += "\nWriting files: : " + (System.currentTimeMillis()-middle2) + " milli seconds =" + (System.currentTimeMillis()-middle2)/1000 +" seconds";
@@ -242,9 +246,14 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			log += print +"\n";
 			print = "Overall : " + (System.currentTimeMillis()-start) + " milli seconds =" + (System.currentTimeMillis()-start)/1000 +" seconds";
 			System.out.println(print);
-			log += print +"\n";
-			writeLogFile(input, log);
-//			System.out.println(ruleString);
+			log += print +"\n\n";
+			File outFile = new File(input.getAbsolutePath() + ".tar.bz2");
+			byteLength = outFile.length();
+			log+= "Length in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB";
+ 			writeLogFile(input, log);
+
+			
+//			printDebug(dcg);
 		}
 	
 	
@@ -309,23 +318,100 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				}				
 				break;
 			case OBJECT:
-				if(objectMap.containsKey(uri)) {
-					index = objectMap.get(uri);
-					break;
-				} else { // check for subjects
-					if(subjectMap.containsKey(uri)) {
-						uri = ""+subjectMap.get(uri);
-					}
-					if(objectMap.containsKey(uri)) {
-						index = objectMap.get(uri);
-						break;
-					}else {
-						index = objectMap.size();
-						objectMap.put(uri, index);
-					}
-				}		
+//				if(objectMap.containsKey(uri)) {
+//					index = objectMap.get(uri);
+//					break;
+//				} else { // check for subjects
+//					if(subjectMap.containsKey(uri)) {
+//						uri = ""+subjectMap.get(uri);
+//					}
+//					if(objectMap.containsKey(uri)) {
+//						index = objectMap.get(uri);
+//						break;
+//					}else {
+//						index = objectMap.size();
+//						objectMap.put(uri, index);
+//					}
+//				}		
+				index = addIndex(uri, SPO.SUBJECT);
 				break;
 		}
 		return index;
+	}
+	
+	public void printDebug(IndexCompressedGraph graph) {
+//		System.out.println("\nCompressed graph:\n"+graph.toString());
+//		System.out.println("Subjects:\n"+subjectMap);
+//
+//		System.out.println("Predicates:\n"+propertyMap);
+//		
+//		System.out.println("Objects:\n"+objectMap);
+		System.out.println("GRAPH...\n");
+		for(IndexRule rule: graph.getRules()) {
+			String out= ""+rule.getNumber()+": ";
+			out+=getUri(rule.getProfile().getProperty(), SPO.PREDICATE)+" - "+getUri(rule.getProfile().getObject(), SPO.OBJECT);
+			out+="[";
+			Iterator<Integer> subjectIter = rule.getProfile().getSubjects().iterator();
+			while(subjectIter.hasNext()) {
+				out += getUri(subjectIter.next(), SPO.SUBJECT);
+				if(subjectIter.hasNext())
+					out += ", ";
+			}
+			out += "]";
+			if(rule.getParents().size()>0) {
+				out += " {";
+				Iterator<IRule<IndexProfile>> it = rule.getParents().iterator();
+				while(it.hasNext()) {
+					out+= it.next().getNumber();
+					if(it.hasNext())
+						out += ", ";
+				}
+				out += "}";
+				
+			}
+			System.out.println(out);			
+		}
+	}
+	
+	public String getUri(Integer index, SPO SPOrO) {
+		String uri = "NOT_FOUND";
+		switch(SPOrO) {
+		case SUBJECT:
+			if(subjectMap.containsValue(index)) {
+				for(Entry<String, Integer> e : subjectMap.entrySet()) {
+					if(e.getValue() == index) {
+						uri = e.getKey();
+						break;
+					}
+				}
+			}
+			break;
+		case PREDICATE:
+			if(propertyMap.containsValue(index)) {
+				for(Entry<String, Integer> e : propertyMap.entrySet()) {
+					if(e.getValue() == index) {
+						uri = e.getKey();
+						break;
+					}
+				}
+			}
+			break;
+		case OBJECT:
+//			if(objectMap.containsValue(index)) {
+//				for(Entry<String, Integer> e : objectMap.entrySet()) {
+//					if(e.getValue() == index) {
+//						uri = e.getKey();
+//						try { 
+//							int subjectIndex = Integer.parseInt(uri);
+//							uri = getUri(subjectIndex, SPO.SUBJECT);
+//						}catch(NumberFormatException nfe){}
+//						break;
+//					}
+//				}
+//			}
+			uri = getUri(index, SPO.SUBJECT);
+			break;
+		}
+		return uri;
 	}
 }

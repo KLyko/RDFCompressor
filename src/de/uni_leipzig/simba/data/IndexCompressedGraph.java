@@ -40,6 +40,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 					nr = o.nr;
 					o.profile.subjects.addAll(r.profile.subjects);
 					rules.set(nr, o);
+					return;
 				}
 			}
 			if(nr == -1) {
@@ -77,11 +78,15 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	@Override
 	public void computeSuperRules() {
 		//TODO is this really benefficial?
+		//TODO to test: only compute superrules for those with atleast 2 uris
+		//TODO test immediatly removing URIS in computed superrules
 //		Collections.sort(rules);
 		//1st compute all supersets
 		for(IndexRule r : rules) {
-			Set<IndexRule> supersets = getSuperRules(r);
-			r.parents.addAll(supersets);
+			if(r.getProfile().subjects.size()>1) {
+				Set<IndexRule> supersets = getSuperRules(r);
+				r.parents.addAll(supersets);
+			}
 		}
 		//2nd remove redundant uris in supersets
 		for(IndexRule r : rules) {
@@ -94,7 +99,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	@Override
 	public void removeRedundantParentRules() {
 		for(IndexRule r : rules) {
-			List<IRule<IndexProfile>> copy =new LinkedList();
+			List<IRule<IndexProfile>> copy = new LinkedList();
 			copy.addAll(r.parents);
 			for(IRule<IndexProfile> parent : r.parents)
 				copy.removeAll(parent.getParents());

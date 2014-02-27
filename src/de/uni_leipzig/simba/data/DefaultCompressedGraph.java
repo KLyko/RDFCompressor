@@ -54,6 +54,7 @@ public class DefaultCompressedGraph implements CompressedGraph<Rule>{
 					nr = o.nr;
 					o.profile.subjects.addAll(r.profile.subjects);
 					rules.set(nr, o);
+					return;
 				}
 			}
 			if(nr == -1) {
