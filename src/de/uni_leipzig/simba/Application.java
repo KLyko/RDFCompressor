@@ -31,7 +31,7 @@ public class Application{
 	    System.out.println("Usage: java <programname> <inputfile>");
 	    if(System.getProperty("user.name").equalsIgnoreCase("lyko")) {
 	    	File path = new File("resources/dummy_data2.nt");
-//	    	path = new File("resources/wordnet-membermeronym.rdf");
+	    	path = new File("resources/wordnet-membermeronym.rdf");
 //	    	path = new File ("resources/archive_hub_dump.nt");
 			if (path.exists()){
 //			    CompressorFactory cf = new CompressorFactory();

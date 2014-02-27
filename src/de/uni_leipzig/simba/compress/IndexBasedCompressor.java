@@ -66,7 +66,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			String print = "Loading model took: " + (middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds";
 			System.out.println(print);
 			log += print +"\n";
-			
+			int stmtCount = 0;
 			while( iter.hasNext() ){
 				Statement stmt = iter.next();
 				
@@ -93,7 +93,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				profile.addSubject(indexS);
 				IndexRule rule = new IndexRule(profile);
 				dcg.addRule(rule);
-				
+				stmtCount++;
 			}
 			print = "Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
 			System.out.println(print);
@@ -249,6 +249,12 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			log += print +"\n\n";
 			File outFile = new File(input.getAbsolutePath() + ".tar.bz2");
 			byteLength = outFile.length();
+			
+			int nrOfRules = dcg.getRules().size();
+			int sizeOfRules = dcg.size();
+			
+			log +="Nr of triples="+stmtCount+" Nr of Rules="+nrOfRules+" Size of Rules="+sizeOfRules+" ratio(#triples/Rule.size())="+sizeOfRules/stmtCount;
+			
 			log+= "Length in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB";
  			writeLogFile(input, log);
 
