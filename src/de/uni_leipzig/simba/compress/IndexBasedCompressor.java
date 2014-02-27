@@ -114,40 +114,45 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 
 			    ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
 			    for(IndexRule rule : dcg.getRules()) {
-  			        IndexProfile profile = rule.getProfile();
-				//outputStream.write(Integer.toString(rule.getNumber()).getBytes());
-				//outputStream.write(":".getBytes());
-				outputStream.write(profile.getProperty().toString().getBytes());
-				outputStream.write("|".getBytes());
-				outputStream.write(profile.getObject().toString().getBytes());
-				outputStream.write("[".getBytes());
-				Iterator ruleIter = profile.getSubjects().iterator();
-				List<Integer> subjects = new LinkedList();
-				subjects.addAll(profile.getSubjects());
-				Collections.sort(subjects);
-				int offset = 0;
-				for(int i=0; i<subjects.size();i++) {
-					int val = subjects.get(i);
-					outputStream.write(Integer.toString(val-offset).getBytes());
-					offset = val;
-					if (i<subjects.size()-1){
-					    outputStream.write("|".getBytes());
-					}
-				}
-				outputStream.write("]".getBytes());
-				outputStream.write("{".getBytes());
-				offset = 0;
-				ruleIter = rule.getParents().iterator();
-				while (ruleIter.hasNext()){
-				    IRule sr = (IRule) ruleIter.next();
-				    outputStream.write(Integer.toString(sr.getNumber()-offset).getBytes());
-				    offset= sr.getNumber();
-				    if (ruleIter.hasNext()){
+	  			        IndexProfile profile = rule.getProfile();
+					//outputStream.write(Integer.toString(rule.getNumber()).getBytes());
+					//outputStream.write(":".getBytes());
+					outputStream.write(profile.getProperty().toString().getBytes());
 					outputStream.write("|".getBytes());
-				    }
-				}
-				outputStream.write("}\n".getBytes());
-			    }
+					outputStream.write(profile.getObject().toString().getBytes());
+					Iterator ruleIter = profile.getSubjects().iterator();
+					int offset = 0;
+					
+					if(profile.size()>0) {
+						outputStream.write("[".getBytes());
+				
+						List<Integer> subjects = new LinkedList();
+						subjects.addAll(profile.getSubjects());
+						Collections.sort(subjects);
+					
+						for(int i=0; i<subjects.size();i++) {
+							int val = subjects.get(i);
+							outputStream.write(Integer.toString(val-offset).getBytes());
+							offset = val;
+							if (i<subjects.size()-1){
+							    outputStream.write("|".getBytes());
+							}
+						}// for each subject
+					}// if rule has subjects
+					if(rule.getParents().size()>0) {
+						outputStream.write("{".getBytes());
+						offset = 0;
+						ruleIter = rule.getParents().iterator();
+						while (ruleIter.hasNext()){
+							IRule sr = (IRule) ruleIter.next();
+						    outputStream.write(Integer.toString(sr.getNumber()-offset).getBytes());
+						    offset= sr.getNumber();
+						    if (ruleIter.hasNext()){
+						    	outputStream.write("|".getBytes());
+						    }
+						}// for each parent
+					}// if rule has parents
+			    }// foreach rule
 			    byte rules[] = outputStream.toByteArray( );
 			
 			    middle2 = System.currentTimeMillis();
