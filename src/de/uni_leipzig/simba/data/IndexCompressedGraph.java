@@ -83,10 +83,10 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 //		Collections.sort(rules); // O(n*log n)
 		//1st compute all supersets
 		for(IndexRule r : rules) { //O(n²)
-			if(r.getProfile().subjects.size()>1) {
+//			if(r.getProfile().subjects.size()>1) {
 				Set<IndexRule> supersets = getSuperRules(r);
 				r.parents.addAll(supersets);
-			}
+//			}
 		}
 		//2nd remove redundant uris in supersets
 		for(IndexRule r : rules) { //O(n)

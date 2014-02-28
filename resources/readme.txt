@@ -1,1 +1,0 @@
-An additional source folder to easy access and store files.

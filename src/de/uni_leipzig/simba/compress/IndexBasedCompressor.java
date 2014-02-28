@@ -152,6 +152,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 						    }
 						}// for each parent
 					}// if rule has parents
+					outputStream.write("\n".getBytes());
 			    }// foreach rule
 			    byte rules[] = outputStream.toByteArray( );
 			
@@ -261,12 +262,53 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			log +="Nr of triples="+stmtCount+" Nr of Rules="+nrOfRules+" Size of Rules="+sizeOfRules+" ratio(#triples/Rule.size())="+tripleRatio;
 			
 			log+= "Length in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB";
+			long n3 = computePlainNTripleBZ2Size(model, input);
+			log += "\n";
+			double sizeRatio =  new Double(byteLength) / new Double(n3);
+			log += "Orginal N3 length in Byte = "+n3+" = "+n3/1024+" KB ="+n3/(1024*1024)+" MB Ratio Our/BZ2="+sizeRatio;
  			writeLogFile(input, log);
 
-			
+ 		
+		 
 //			printDebug(dcg);
 		}
 	
+	 
+	 public long computePlainNTripleBZ2Size(Model model, File orgFile) {
+		 long size = 0;				
+		 File out = new File(orgFile.getAbsolutePath()+"_N3.n3.bz2");
+		 if(!out.exists())
+		   try {
+
+			   
+			   	ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+				model.write(outputStream, "N3-TRIPLE");
+
+			   
+				OutputStream os = new FileOutputStream(orgFile.getAbsolutePath()+"_N3.n3.bz2");
+			    OutputStream bzos = new BZip2CompressorOutputStream(os);
+			    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
+
+			    byte n3s[] = outputStream.toByteArray( );
+
+			    TarArchiveEntry entry = new TarArchiveEntry(orgFile.getAbsolutePath()+"_N3.n3");
+			    entry.setSize(n3s.length);
+			    aos.putArchiveEntry(entry);
+			    aos.write(n3s);
+			    aos.closeArchiveEntry();
+			    
+			    aos.finish();
+			    aos.close();
+			    bzos.close();
+			    os.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			size = out.length();
+			return size;
+	 }
 	
 	private void writeLogFile(File source, String log) {
 		File logFile = new File(source.getAbsolutePath()+"_log.txt");
