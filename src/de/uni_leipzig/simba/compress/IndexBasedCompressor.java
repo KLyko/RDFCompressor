@@ -59,7 +59,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			
 			// build inverse list of p/o tuples
 			IndexCompressedGraph dcg = new IndexCompressedGraph();
-		
+			
 			StmtIterator iter = model.listStatements();
 			long middle = System.currentTimeMillis();
 			long middle2 = System.currentTimeMillis();
@@ -257,8 +257,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			
 			int nrOfRules = dcg.getRules().size();
 			int sizeOfRules = dcg.size();
-			
-			log +="Nr of triples="+stmtCount+" Nr of Rules="+nrOfRules+" Size of Rules="+sizeOfRules+" ratio(#triples/Rule.size())="+sizeOfRules/stmtCount;
+			double tripleRatio = new Double(sizeOfRules)/new Double(stmtCount);
+			log +="Nr of triples="+stmtCount+" Nr of Rules="+nrOfRules+" Size of Rules="+sizeOfRules+" ratio(#triples/Rule.size())="+tripleRatio;
 			
 			log+= "Length in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB";
  			writeLogFile(input, log);

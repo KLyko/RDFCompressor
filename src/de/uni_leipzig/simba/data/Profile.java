@@ -82,6 +82,18 @@ public class Profile implements IProfile<Resource, Property, RDFNode>, Serializa
 	public Set<Resource> getSubjects() {
 		return subjects;
 	}
+
+	@Override
+	public Resource getMinSubject() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Resource getMaxSubject() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 //	@Override
 //	public String toString() {

@@ -11,4 +11,7 @@ public interface IProfile<S, P, O> {
 	public P getProperty();
 	public O getObject();
 	public Set<S> getSubjects();
+	
+	public S getMinSubject();
+	public S getMaxSubject();
 }

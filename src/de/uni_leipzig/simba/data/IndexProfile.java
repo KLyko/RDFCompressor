@@ -14,6 +14,9 @@ public class IndexProfile implements IProfile<Integer, Integer, Integer>, Serial
 	Integer prop;
 	Integer obj;
 	Set<Integer> subjects = new HashSet<Integer>();
+	Integer min=Integer.MAX_VALUE;
+	Integer max=Integer.MIN_VALUE;
+	
 	
 	public IndexProfile(Integer prop, Integer obj) {
 		this.prop = prop;
@@ -22,6 +25,10 @@ public class IndexProfile implements IProfile<Integer, Integer, Integer>, Serial
 	}
 	
 	public boolean addSubject(Integer r) {
+		if(min > r)
+			min = r;
+		if(max < r)
+			max = r;
 		return subjects.add(r);
 	}
 	
@@ -67,5 +74,13 @@ public class IndexProfile implements IProfile<Integer, Integer, Integer>, Serial
 	@Override
 	public void setProperty(Integer property) {
 		prop = property;
+	}
+	@Override
+	public Integer getMinSubject() {
+		return min;
+	}
+	@Override
+	public Integer getMaxSubject() {
+		return max;
 	}
 }

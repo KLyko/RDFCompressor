@@ -1,4 +1,5 @@
 package de.uni_leipzig.simba.data;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -59,8 +60,10 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 			else {// other has almost as many elements
 				if(!r.profile.equals(o.profile) && // isn't the same
 						!r.profile.subjects.isEmpty() && // isn't empty
-						o.profile.subjects.containsAll(r.profile.subjects)// other contains all uris of r
-						&& !o.parents.contains(r)) // avoid double linking to parent
+						r.profile.min>=o.profile.min && // check uri ranges
+						r.profile.max<=o.profile.max &&
+						o.profile.subjects.containsAll(r.profile.subjects) && // other contains all uris of r
+					   !o.parents.contains(r)) // avoid double linking to parent
 				{
 //					boolean add = true;
 //					for(IRule another : r.parents) {
@@ -77,19 +80,16 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 
 	@Override
 	public void computeSuperRules() {
-		//TODO is this really benefficial?
-		//TODO to test: only compute superrules for those with atleast 2 uris
-		//TODO test immediatly removing URIS in computed superrules
-//		Collections.sort(rules);
+//		Collections.sort(rules); // O(n*log n)
 		//1st compute all supersets
-		for(IndexRule r : rules) {
+		for(IndexRule r : rules) { //O(n²)
 			if(r.getProfile().subjects.size()>1) {
 				Set<IndexRule> supersets = getSuperRules(r);
 				r.parents.addAll(supersets);
 			}
 		}
 		//2nd remove redundant uris in supersets
-		for(IndexRule r : rules) {
+		for(IndexRule r : rules) { //O(n)
 			for(IRule<IndexProfile> superRule : r.parents) {
 				superRule.getProfile().subjects.removeAll(r.profile.subjects);
 			}
