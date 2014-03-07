@@ -80,6 +80,9 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 
 	@Override
 	public void computeSuperRules() {
+    	Collections.sort(rules, new IndexRuleComparator());
+    	for(IndexRule r : rules) 
+    		r.setNumber(rules.indexOf(r));
 //		Collections.sort(rules); // O(n*log n)
 		//1st compute all supersets
 		for(IndexRule r : rules) { //O(n²)

@@ -113,16 +113,19 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			try{
 
 			    ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+			    Integer prevProperty = -1;
 			    for(IndexRule rule : dcg.getRules()) {
-	  			        IndexProfile profile = rule.getProfile();
+	  			    IndexProfile profile = rule.getProfile();
 					//outputStream.write(Integer.toString(rule.getNumber()).getBytes());
 					//outputStream.write(":".getBytes());
-					outputStream.write(profile.getProperty().toString().getBytes());
-					outputStream.write("|".getBytes());
+	  			    if(prevProperty != profile.getProperty()) {
+						outputStream.write(profile.getProperty().toString().getBytes());
+						outputStream.write("|".getBytes());
+	  			    }
 					outputStream.write(profile.getObject().toString().getBytes());
 					Iterator ruleIter = profile.getSubjects().iterator();
 					int offset = 0;
-					
+					prevProperty = profile.getProperty();
 					if(profile.size()>0) {
 						outputStream.write("[".getBytes());
 				
@@ -268,8 +271,6 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			log += "Orginal N3 length in Byte = "+n3+" = "+n3/1024+" KB ="+n3/(1024*1024)+" MB Ratio Our/BZ2="+sizeRatio;
  			writeLogFile(input, log);
 
- 		
-		 
 //			printDebug(dcg);
 		}
 	
