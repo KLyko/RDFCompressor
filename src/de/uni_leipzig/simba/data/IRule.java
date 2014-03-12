@@ -9,9 +9,13 @@ public interface IRule<IPRofile> {
 
 	public void setProfile(IPRofile profile);
 	
-	public void addParent(IRule<IPRofile> r);
+	public void addParent(IRule<IPRofile> parent);
 
+	public void addChild(IRule<IProfile> child);
+	
     public IPRofile getProfile();
     
     public List<IRule<IPRofile>> getParents();
+    
+    public List<IRule<IProfile>> getChildren();
 }

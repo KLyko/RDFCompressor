@@ -33,11 +33,15 @@ import de.uni_leipzig.simba.data.IndexRule;
  *
  */
 public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInterface {
-	String log = "One HashMap for object and subject\n";
+	String log = "-->One HashMap for object and subject\n" +
+			"--> sorted by props\n" +
+			"--> one tar archive\n";
+
 	HashMap<String, String> shortToUri = new HashMap();
 	HashMap<String, Integer> subjectMap = new HashMap();
 //	HashMap<String, Integer> objectMap = new HashMap();
 	HashMap<String, Integer> propertyMap = new HashMap();
+	IndexCompressedGraph dcg; Model model;
 	public IndexBasedCompressor() {
 		//nothing to do here so far.
 	}
@@ -47,9 +51,10 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		 	
 			long byteLength = input.length();
 			log+= "Length in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB\n\n";
- 			
+			writeLogFile(input, log, false);
+			
 		 	long start = System.currentTimeMillis();
-			Model model = FileManager.get().loadModel( input.toString() );
+			model = FileManager.get().loadModel( input.toString() );
 		
 //			StringWriter graphOutput = new StringWriter();
 //			model.write(graphOutput, "TURTLE");
@@ -58,14 +63,15 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			shortToUri.putAll(model.getNsPrefixMap());
 			
 			// build inverse list of p/o tuples
-			IndexCompressedGraph dcg = new IndexCompressedGraph();
+			dcg = new IndexCompressedGraph();
 			
 			StmtIterator iter = model.listStatements();
 			long middle = System.currentTimeMillis();
 			long middle2 = System.currentTimeMillis();
 			String print = "Loading model took: " + (middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds";
 			System.out.println(print);
-			log += print +"\n";
+			writeLogFile(input, print, true);
+			
 			int stmtCount = 0;
 			while( iter.hasNext() ){
 				Statement stmt = iter.next();
@@ -95,181 +101,54 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				dcg.addRule(rule);
 				stmtCount++;
 			}
-			print = "Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
+			print = "Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 			System.out.println(print);
-			log += print +"\n";
+//			log += print +"\n";
+			writeLogFile(input, print, true);
 			middle = System.currentTimeMillis();
 			dcg.computeSuperRules();
-			print = "RComputing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
+			print = "Computing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 			System.out.println(print);
-			log += print +"\n";
+			writeLogFile(input, print, true);
+//			log += print +"\n";
 			middle = System.currentTimeMillis();
 			dcg.removeRedundantParentRules();
-			print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds =" + (System.currentTimeMillis()-middle)/1000 +" seconds";
+			print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 			System.out.println(print);
-			log += print +"\n";
+			writeLogFile(input, print, true);
+//			log += print +"\n";
 			middle = System.currentTimeMillis();
 
 			try{
-
-			    ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-			    Integer prevProperty = -1;
-			    for(IndexRule rule : dcg.getRules()) {
-	  			    IndexProfile profile = rule.getProfile();
-					//outputStream.write(Integer.toString(rule.getNumber()).getBytes());
-					//outputStream.write(":".getBytes());
-	  			    if(prevProperty != profile.getProperty()) {
-						outputStream.write(profile.getProperty().toString().getBytes());
-						outputStream.write("|".getBytes());
-	  			    }
-					outputStream.write(profile.getObject().toString().getBytes());
-					Iterator ruleIter = profile.getSubjects().iterator();
-					int offset = 0;
-					prevProperty = profile.getProperty();
-					if(profile.size()>0) {
-						outputStream.write("[".getBytes());
-				
-						List<Integer> subjects = new LinkedList();
-						subjects.addAll(profile.getSubjects());
-						Collections.sort(subjects);
-					
-						for(int i=0; i<subjects.size();i++) {
-							int val = subjects.get(i);
-							outputStream.write(Integer.toString(val-offset).getBytes());
-							offset = val;
-							if (i<subjects.size()-1){
-							    outputStream.write("|".getBytes());
-							}
-						}// for each subject
-					}// if rule has subjects
-					if(rule.getParents().size()>0) {
-						outputStream.write("{".getBytes());
-						offset = 0;
-						ruleIter = rule.getParents().iterator();
-						while (ruleIter.hasNext()){
-							IRule sr = (IRule) ruleIter.next();
-						    outputStream.write(Integer.toString(sr.getNumber()-offset).getBytes());
-						    offset= sr.getNumber();
-						    if (ruleIter.hasNext()){
-						    	outputStream.write("|".getBytes());
-						    }
-						}// for each parent
-					}// if rule has parents
-					outputStream.write("\n".getBytes());
-			    }// foreach rule
-			    byte rules[] = outputStream.toByteArray( );
-			
-			    middle2 = System.currentTimeMillis();
-			
-			    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".tar.bz2");
-			    OutputStream bzos = new BZip2CompressorOutputStream(os);
-			    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
-
-			    // write prefixes
-			    outputStream = new ByteArrayOutputStream( );
-
-			    for (Entry<String, String>  entry : model.getNsPrefixMap().entrySet()) {
-			    	outputStream.write( entry.getKey().getBytes());
-			    	outputStream.write( "|".getBytes());
-			    	outputStream.write( entry.getValue().getBytes());
-			    	outputStream.write( "\n".getBytes());
-			    }
-			    byte prefixes[] = outputStream.toByteArray( );
-
-			    TarArchiveEntry entry = new TarArchiveEntry("prefixes");
-			    entry.setSize(prefixes.length);
-			    aos.putArchiveEntry(entry);
-			    aos.write(prefixes);
-			    aos.closeArchiveEntry();
-
-			    // write subject index
-			    outputStream = new ByteArrayOutputStream( );
-
-			    for (Entry<String, Integer> subject : this.subjectMap.entrySet()) {
-			    	outputStream.write( subject.getKey().getBytes());
-			    	outputStream.write( "|".getBytes());
-			    	outputStream.write( subject.getValue().toString().getBytes());
-			    	outputStream.write( "\n".getBytes());
-			    }
-			    byte subjects[] = outputStream.toByteArray( );
-
-			    entry = new TarArchiveEntry("subjects");
-			    entry.setSize(subjects.length);
-			    aos.putArchiveEntry(entry);
-			    aos.write(subjects);
-			    aos.closeArchiveEntry();
-
-//			    // write object index
-//			    outputStream = new ByteArrayOutputStream( );
-//
-//			    for (Entry<String, Integer> object : this.objectMap.entrySet()) {
-//			    	outputStream.write( object.getKey().getBytes());
-//			    	outputStream.write( "|".getBytes());
-//			    	outputStream.write( object.getValue().toString().getBytes());
-//			    	outputStream.write( "\n".getBytes());
-//			    }
-//			    byte objects[] = outputStream.toByteArray( );
-//
-//			    entry = new TarArchiveEntry("objects");
-//			    entry.setSize(objects.length);
-//			    aos.putArchiveEntry(entry);
-//			    aos.write(objects);
-//			    aos.closeArchiveEntry();
-
-			    // write property index
-			    outputStream = new ByteArrayOutputStream( );
-
-			    for (Entry<String, Integer> property : this.propertyMap.entrySet()) {
-			    	outputStream.write( property.getKey().getBytes());
-			    	outputStream.write( "|".getBytes());
-			    	outputStream.write( property.getValue().toString().getBytes());
-			    	outputStream.write( "\n".getBytes());
-			    }
-			    byte properties[] = outputStream.toByteArray( );
-			    
-			    entry = new TarArchiveEntry("properties");
-			    entry.setSize(properties.length);
-			    aos.putArchiveEntry(entry);
-			    aos.write(properties);
-			    aos.closeArchiveEntry();
-
-			    // write rules
-			    entry = new TarArchiveEntry("rules");
-			    entry.setSize(rules.length);
-			    aos.putArchiveEntry(entry);
-			    aos.write(rules);
-			    aos.closeArchiveEntry();
-			    
-			    aos.finish();
-			    aos.close();
-			    bzos.close();
-			    os.close();
+				writeSinleTarFile(input);			   
 			}
 			catch (IOException ioe){
 				System.out.println(ioe);
 				log += "\nExeption:"+ioe+" \n";
 			}
-			print = "Serializing Rulestring: : " + (middle2-middle) + " milli seconds =" + (middle2-middle)/1000 +" seconds";
-			print += "\nWriting files: : " + (System.currentTimeMillis()-middle2) + " milli seconds =" + (System.currentTimeMillis()-middle2)/1000 +" seconds";
+//			print = "Serializing Rulestring: : " + (middle2-middle) + " milli seconds =" + (middle2-middle)/1000 +" seconds";
+			print += "\nWriting files: : " + (System.currentTimeMillis()-middle2) + " milli seconds = " + (System.currentTimeMillis()-middle2)/1000 +" seconds";
 			System.out.println(print);
-			log += print +"\n";
-			print = "Overall : " + (System.currentTimeMillis()-start) + " milli seconds =" + (System.currentTimeMillis()-start)/1000 +" seconds";
+			writeLogFile(input, print, true);
+//			log += print +"\n";
+			print = "Overall : " + (System.currentTimeMillis()-start) + " milli seconds = " + (System.currentTimeMillis()-start)/1000 +" seconds";
 			System.out.println(print);
-			log += print +"\n\n";
+//			log += print +"\n\n";
+			writeLogFile(input, print, true);
 			File outFile = new File(input.getAbsolutePath() + ".tar.bz2");
 			byteLength = outFile.length();
 			
 			int nrOfRules = dcg.getRules().size();
 			int sizeOfRules = dcg.size();
 			double tripleRatio = new Double(sizeOfRules)/new Double(stmtCount);
-			log +="Nr of triples="+stmtCount+" Nr of Rules="+nrOfRules+" Size of Rules="+sizeOfRules+" ratio(#triples/Rule.size())="+tripleRatio;
+			log ="\nNr of triples="+stmtCount+" Nr of Rules="+nrOfRules+" Size of Rules="+sizeOfRules+" ratio(#triples/Rule.size())="+tripleRatio;
 			
-			log+= "Length in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB";
+			log+= "\nLength in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB";
 			long n3 = computePlainNTripleBZ2Size(model, input);
 			log += "\n";
 			double sizeRatio =  new Double(byteLength) / new Double(n3);
 			log += "Orginal N3 length in Byte = "+n3+" = "+n3/1024+" KB ="+n3/(1024*1024)+" MB Ratio Our/BZ2="+sizeRatio;
- 			writeLogFile(input, log);
+ 			writeLogFile(input, log, true);
 
 //			printDebug(dcg);
 		}
@@ -311,11 +190,11 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			return size;
 	 }
 	
-	private void writeLogFile(File source, String log) {
+	private void writeLogFile(File source, String log, boolean append) {
 		File logFile = new File(source.getAbsolutePath()+"_log.txt");
 		try {
 			
-			FileWriter writer =  new FileWriter(logFile, false);
+			FileWriter writer =  new FileWriter(logFile, append);
 			writer.write(log);
 			writer.write(System.getProperty("line.separator"));
 			writer.flush();
@@ -467,5 +346,233 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			break;
 		}
 		return uri;
+	}
+	
+	private void writeTarArchive(File input) throws IOException {
+		 ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+		    Integer prevProperty = -1;
+		    for(IndexRule rule : dcg.getRules()) {
+			    IndexProfile profile = rule.getProfile();
+				//outputStream.write(Integer.toString(rule.getNumber()).getBytes());
+				//outputStream.write(":".getBytes());
+			    if(prevProperty != profile.getProperty()) {
+					outputStream.write(profile.getProperty().toString().getBytes());
+					outputStream.write("|".getBytes());
+			    }
+				outputStream.write(profile.getObject().toString().getBytes());
+				Iterator ruleIter = profile.getSubjects().iterator();
+				int offset = 0;
+				prevProperty = profile.getProperty();
+				if(profile.size()>0) {
+					outputStream.write("[".getBytes());
+			
+					List<Integer> subjects = new LinkedList();
+					subjects.addAll(profile.getSubjects());
+					Collections.sort(subjects);
+				
+					for(int i=0; i<subjects.size();i++) {
+						int val = subjects.get(i);
+						outputStream.write(Integer.toString(val-offset).getBytes());
+						offset = val;
+						if (i<subjects.size()-1){
+						    outputStream.write("|".getBytes());
+						}
+					}// for each subject
+				}// if rule has subjects
+				if(rule.getParents().size()>0) {
+					outputStream.write("{".getBytes());
+					offset = 0;
+					ruleIter = rule.getParents().iterator();
+					while (ruleIter.hasNext()){
+						IRule sr = (IRule) ruleIter.next();
+					    outputStream.write(Integer.toString(sr.getNumber()-offset).getBytes());
+					    offset= sr.getNumber();
+					    if (ruleIter.hasNext()){
+					    	outputStream.write("|".getBytes());
+					    }
+					}// for each parent
+				}// if rule has parents
+				outputStream.write("\n".getBytes());
+		    }// foreach rule
+		    byte rules[] = outputStream.toByteArray( );
+		
+		    
+		
+		    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".tar.bz2");
+		    OutputStream bzos = new BZip2CompressorOutputStream(os);
+		    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
+
+		    // write prefixes
+		    outputStream = new ByteArrayOutputStream( );
+
+		    for (Entry<String, String>  entry : model.getNsPrefixMap().entrySet()) {
+		    	outputStream.write( entry.getKey().getBytes());
+		    	outputStream.write( "|".getBytes());
+		    	outputStream.write( entry.getValue().getBytes());
+		    	outputStream.write( "\n".getBytes());
+		    }
+		    byte prefixes[] = outputStream.toByteArray( );
+
+		    TarArchiveEntry entry = new TarArchiveEntry("prefixes");
+		    entry.setSize(prefixes.length);
+		    aos.putArchiveEntry(entry);
+		    aos.write(prefixes);
+		    aos.closeArchiveEntry();
+
+		    // write subject index
+		    outputStream = new ByteArrayOutputStream( );
+
+		    for (Entry<String, Integer> subject : this.subjectMap.entrySet()) {
+		    	outputStream.write( subject.getKey().getBytes());
+		    	outputStream.write( "|".getBytes());
+		    	outputStream.write( subject.getValue().toString().getBytes());
+		    	outputStream.write( "\n".getBytes());
+		    }
+		    byte subjects[] = outputStream.toByteArray( );
+
+		    entry = new TarArchiveEntry("subjects");
+		    entry.setSize(subjects.length);
+		    aos.putArchiveEntry(entry);
+		    aos.write(subjects);
+		    aos.closeArchiveEntry();
+
+//		    // write object index
+//		    outputStream = new ByteArrayOutputStream( );
+//
+//		    for (Entry<String, Integer> object : this.objectMap.entrySet()) {
+//		    	outputStream.write( object.getKey().getBytes());
+//		    	outputStream.write( "|".getBytes());
+//		    	outputStream.write( object.getValue().toString().getBytes());
+//		    	outputStream.write( "\n".getBytes());
+//		    }
+//		    byte objects[] = outputStream.toByteArray( );
+//
+//		    entry = new TarArchiveEntry("objects");
+//		    entry.setSize(objects.length);
+//		    aos.putArchiveEntry(entry);
+//		    aos.write(objects);
+//		    aos.closeArchiveEntry();
+
+		    // write property index
+		    outputStream = new ByteArrayOutputStream( );
+
+		    for (Entry<String, Integer> property : this.propertyMap.entrySet()) {
+		    	outputStream.write( property.getKey().getBytes());
+		    	outputStream.write( "|".getBytes());
+		    	outputStream.write( property.getValue().toString().getBytes());
+		    	outputStream.write( "\n".getBytes());
+		    }
+		    byte properties[] = outputStream.toByteArray( );
+		    
+		    entry = new TarArchiveEntry("properties");
+		    entry.setSize(properties.length);
+		    aos.putArchiveEntry(entry);
+		    aos.write(properties);
+		    aos.closeArchiveEntry();
+
+		    // write rules
+		    entry = new TarArchiveEntry("rules");
+		    entry.setSize(rules.length);
+		    aos.putArchiveEntry(entry);
+		    aos.write(rules);
+		    aos.closeArchiveEntry();
+		    
+		    aos.finish();
+		    aos.close();
+		    bzos.close();
+		    os.close();
+	}
+	
+	private void writeSinleTarFile(File input) throws IOException {
+		 ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+		    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".tar.bz2");
+		    OutputStream bzos = new BZip2CompressorOutputStream(os);
+		    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
+
+		    outputStream.write("\n".getBytes());
+		    for (Entry<String, String>  entry : model.getNsPrefixMap().entrySet()) {
+		    	outputStream.write( entry.getKey().getBytes());
+		    	outputStream.write( "|".getBytes());
+		    	outputStream.write( entry.getValue().getBytes());
+		    	outputStream.write( "\n".getBytes());
+		    }
+
+		    outputStream.write("|||\n".getBytes());
+		    
+		    for (Entry<String, Integer> subject : this.subjectMap.entrySet()) {
+		    	outputStream.write( subject.getKey().getBytes());
+		    	outputStream.write( "|".getBytes());
+		    	outputStream.write( subject.getValue().toString().getBytes());
+		    	outputStream.write( "\n".getBytes());
+		    }
+
+		    outputStream.write("|||\n".getBytes());
+
+		    for (Entry<String, Integer> property : this.propertyMap.entrySet()) {
+		    	outputStream.write( property.getKey().getBytes());
+		    	outputStream.write( "|".getBytes());
+		    	outputStream.write( property.getValue().toString().getBytes());
+		    	outputStream.write( "\n".getBytes());
+		    }
+		    
+		    outputStream.write("|||\n".getBytes());
+		    Integer prevProperty = -1;
+		    for(IndexRule rule : dcg.getRules()) {
+			    IndexProfile profile = rule.getProfile();
+				//outputStream.write(Integer.toString(rule.getNumber()).getBytes());
+				//outputStream.write(":".getBytes());
+			    if(prevProperty != profile.getProperty()) {
+					outputStream.write(profile.getProperty().toString().getBytes());
+					outputStream.write("|".getBytes());
+			    }
+				outputStream.write(profile.getObject().toString().getBytes());
+				Iterator ruleIter = profile.getSubjects().iterator();
+				int offset = 0;
+				prevProperty = profile.getProperty();
+				if(profile.size()>0) {
+					outputStream.write("[".getBytes());
+			
+					List<Integer> subjects = new LinkedList();
+					subjects.addAll(profile.getSubjects());
+					Collections.sort(subjects);
+				
+					for(int i=0; i<subjects.size();i++) {
+						int val = subjects.get(i);
+						outputStream.write(Integer.toString(val-offset).getBytes());
+						offset = val;
+						if (i<subjects.size()-1){
+						    outputStream.write("|".getBytes());
+						}
+					}// for each subject
+				}// if rule has subjects
+				if(rule.getParents().size()>0) {
+					outputStream.write("{".getBytes());
+					offset = 0;
+					ruleIter = rule.getParents().iterator();
+					while (ruleIter.hasNext()){
+						IRule sr = (IRule) ruleIter.next();
+					    outputStream.write(Integer.toString(sr.getNumber()-offset).getBytes());
+					    offset= sr.getNumber();
+					    if (ruleIter.hasNext()){
+					    	outputStream.write("|".getBytes());
+					    }
+					}// for each parent
+				}// if rule has parents
+				outputStream.write("\n".getBytes());
+		    }// foreach rule
+		    
+		    byte all[] = outputStream.toByteArray( );
+		    
+		    TarArchiveEntry entry = new TarArchiveEntry("all");
+		    entry.setSize(all.length);
+		    aos.putArchiveEntry(entry);
+		    aos.write(all);
+		    aos.closeArchiveEntry();
+
+		    
+		    aos.finish();
+		    aos.close();
+		    bzos.close();
+		    os.close();
 	}
 }

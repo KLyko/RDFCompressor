@@ -16,15 +16,22 @@ public class Rule implements IRule<Profile>, Serializable, Comparable{
 	 * List of Rules which apply to the same subjects.
 	 */
 	List<IRule<Profile>> parents;
+	List<IRule<IProfile>> children;
 	Profile profile;
 	int nr;
 	
 	public Rule(Profile profile) {
 		this.profile = profile;
 		parents = new LinkedList();
+		children = new LinkedList();
 	}
 	@Override
 	public void addParent(IRule r) {
+		this.parents.add(r);
+	}
+	
+	@Override
+	public void addChild(IRule r) {
 		this.parents.add(r);
 	}
 	
@@ -72,4 +79,8 @@ public class Rule implements IRule<Profile>, Serializable, Comparable{
 		return parents;
 	}	
 	
+	@Override
+	public List<IRule<IProfile>> getChildren() {
+		return children;
+	}
 }
