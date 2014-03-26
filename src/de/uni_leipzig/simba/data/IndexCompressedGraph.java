@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 
@@ -17,12 +18,12 @@ import org.apache.log4j.Logger;
 public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	/**redundant for now*/
 	List<IndexRule> rules;
-	HashSet<IndexRule> ruleHash;
+	TreeSet<IndexRule> ruleHash;
 	static Logger logger = Logger.getLogger(IndexCompressedGraph.class);
 	
 	public IndexCompressedGraph() {
 		rules = new LinkedList<IndexRule>();
-		ruleHash = new HashSet<IndexRule>();
+		ruleHash = new TreeSet<IndexRule>();
 	}
 
 	
@@ -59,20 +60,14 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 				continue;
 			else {// other has almost as many elements
 				if(!r.profile.equals(o.profile) && // isn't the same
-						!r.profile.subjects.isEmpty() && // isn't empty
-						r.profile.min>=o.profile.min && // check uri ranges
-						r.profile.max<=o.profile.max &&
-						o.profile.subjects.containsAll(r.profile.subjects) && // other contains all uris of r
-					   !o.parents.contains(r)) // avoid double linking to parent
-				{
-//					boolean add = true;
-//					for(IRule another : r.parents) {
-//						if(another.equals(o))
-//							add = false;
-//					}
-//					if(add)
-						result.add(o);				
-				}
+						!r.profile.subjects.isEmpty() ) // isn't empty
+					if(r.profile.min>=o.profile.min && // check uri ranges
+						r.profile.max<=o.profile.max)
+						if(o.profile.subjects.containsAll(r.profile.subjects) && // other contains all uris of r
+								!o.parents.contains(r)) // avoid double linking to parent
+						{
+								result.add(o);				
+						}
 			}
 		}
 		return result;

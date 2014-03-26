@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,6 +27,7 @@ import de.uni_leipzig.simba.data.IRule;
 import de.uni_leipzig.simba.data.IndexCompressedGraph;
 import de.uni_leipzig.simba.data.IndexProfile;
 import de.uni_leipzig.simba.data.IndexRule;
+import de.uni_leipzig.simba.data.SubjectCount;
 /**
  * Implementation of an index based compression:
  * Creates Indexes for all subjects, objects, predicates. And operates on them
@@ -35,10 +37,12 @@ import de.uni_leipzig.simba.data.IndexRule;
 public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInterface {
 	String log = "-->One HashMap for object and subject\n" +
 			"--> sorted by props\n" +
-			"--> one tar archive\n";
+			"--> one tar archive\n " +
+			"--> sort uris frequence based";
 
 	HashMap<String, String> shortToUri = new HashMap();
-	HashMap<String, Integer> subjectMap = new HashMap();
+	HashMap<String, SubjectCount> subjectMap = new HashMap();
+	
 //	HashMap<String, Integer> objectMap = new HashMap();
 	HashMap<String, Integer> propertyMap = new HashMap();
 	IndexCompressedGraph dcg; Model model;
@@ -48,109 +52,120 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	
 	 public void compress(File input) {
 		 	log += input.getAbsolutePath()+"\n";
-		 	
+		
 			long byteLength = input.length();
 			log+= "Length in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB\n\n";
 			writeLogFile(input, log, false);
 			
 		 	long start = System.currentTimeMillis();
-			model = FileManager.get().loadModel( input.toString() );
+		 	try {
+			 	model = FileManager.get().loadModel( input.toString() );
 		
-//			StringWriter graphOutput = new StringWriter();
-//			model.write(graphOutput, "TURTLE");
-//			System.out.println(graphOutput);
-			
-			shortToUri.putAll(model.getNsPrefixMap());
-			
-			// build inverse list of p/o tuples
-			dcg = new IndexCompressedGraph();
-			
-			StmtIterator iter = model.listStatements();
-			long middle = System.currentTimeMillis();
-			long middle2 = System.currentTimeMillis();
-			String print = "Loading model took: " + (middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds";
-			System.out.println(print);
-			writeLogFile(input, print, true);
-			
-			int stmtCount = 0;
-			while( iter.hasNext() ){
-				Statement stmt = iter.next();
+	//			StringWriter graphOutput = new StringWriter();
+	//			model.write(graphOutput, "TURTLE");
+	//			System.out.println(graphOutput);
 				
-				String s = stmt.getSubject().toString();
+				shortToUri.putAll(model.getNsPrefixMap());
+				
+				// build inverse list of p/o tuples
+				dcg = new IndexCompressedGraph();
+				
+				StmtIterator iter = model.listStatements();
+				
+				long middle = System.currentTimeMillis();
+				long middle2 = System.currentTimeMillis();
+				String print = "Loading model took: " + (middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds";
+				System.out.println(print);
+				writeLogFile(input, print, true);
+				
+				int stmtCount = 0;
+				while( iter.hasNext() ){
+					Statement stmt = iter.next();
+					
+					String s = stmt.getSubject().toString();
+					try{
+						s = model.shortForm(s);
+					} catch(NullPointerException npe){ /*bnode*/ }
+					
+					String p = stmt.getPredicate().getURI();
+					try{
+						p = model.shortForm(p);
+					} catch(NullPointerException npe){ /*bnode*/ }
+					
+					String o = stmt.getObject().toString();
+					try{
+						o = model.shortForm(o);
+					} catch(NullPointerException npe){ /*bnode*/ }
+					
+	//				System.out.println(s + " -- " + p + " -- " + o);
+					int indexS = addIndex(s, SPO.SUBJECT);
+					int indexP = addIndex(p, SPO.PREDICATE);
+					int indexO = addIndex(o, SPO.OBJECT);
+					IndexProfile profile = new IndexProfile(indexP, indexO);
+					profile.addSubject(indexS);
+					IndexRule rule = new IndexRule(profile);
+					dcg.addRule(rule);
+					stmtCount++;
+				}
+				print = "Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
+				System.out.println(print);
+	//			log += print +"\n";
+				writeLogFile(input, print, true);
+				middle = System.currentTimeMillis();
+				dcg.computeSuperRules();
+				print = "Computing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
+				System.out.println(print);
+				writeLogFile(input, print, true);
+	//			log += print +"\n";
+				middle = System.currentTimeMillis();
+				dcg.removeRedundantParentRules();
+				print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
+				System.out.println(print);
+				writeLogFile(input, print, true);
+	//			log += print +"\n";
+				middle = System.currentTimeMillis();
+	
 				try{
-					s = model.shortForm(s);
-				} catch(NullPointerException npe){ /*bnode*/ }
+					writeSingleTarFile(input);			   
+				}
+				catch (IOException ioe){
+					System.out.println(ioe);
+					log += "\nExeption:"+ioe+" \n";
+				}
+	//			print = "Serializing Rulestring: : " + (middle2-middle) + " milli seconds =" + (middle2-middle)/1000 +" seconds";
+				print += "\nWriting files: : " + (System.currentTimeMillis()-middle2) + " milli seconds = " + (System.currentTimeMillis()-middle2)/1000 +" seconds";
+				System.out.println(print);
+				writeLogFile(input, print, true);
+	//			log += print +"\n";
+				print = "Overall : " + (System.currentTimeMillis()-start) + " milli seconds = " + (System.currentTimeMillis()-start)/1000 +" seconds";
+				System.out.println(print);
+	//			log += print +"\n\n";
+				writeLogFile(input, print, true);
+				File outFile = new File(input.getAbsolutePath() + ".tar.bz2");
+				byteLength = outFile.length();
 				
-				String p = stmt.getPredicate().getURI();
-				try{
-					p = model.shortForm(p);
-				} catch(NullPointerException npe){ /*bnode*/ }
+				int nrOfRules = dcg.getRules().size();
+				int sizeOfRules = dcg.size();
+				double tripleRatio = new Double(sizeOfRules)/new Double(stmtCount);
+				log ="\nNr of triples="+stmtCount+" Nr of Rules="+nrOfRules+" Size of Rules="+sizeOfRules+" ratio(#triples/Rule.size())="+tripleRatio;
 				
-				String o = stmt.getObject().toString();
-				try{
-					o = model.shortForm(o);
-				} catch(NullPointerException npe){ /*bnode*/ }
-				
-//				System.out.println(s + " -- " + p + " -- " + o);
-				int indexS = addIndex(s, SPO.SUBJECT);
-				int indexP = addIndex(p, SPO.PREDICATE);
-				int indexO = addIndex(o, SPO.OBJECT);
-				IndexProfile profile = new IndexProfile(indexP, indexO);
-				profile.addSubject(indexS);
-				IndexRule rule = new IndexRule(profile);
-				dcg.addRule(rule);
-				stmtCount++;
-			}
-			print = "Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
-			System.out.println(print);
-//			log += print +"\n";
-			writeLogFile(input, print, true);
-			middle = System.currentTimeMillis();
-			dcg.computeSuperRules();
-			print = "Computing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
-			System.out.println(print);
-			writeLogFile(input, print, true);
-//			log += print +"\n";
-			middle = System.currentTimeMillis();
-			dcg.removeRedundantParentRules();
-			print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
-			System.out.println(print);
-			writeLogFile(input, print, true);
-//			log += print +"\n";
-			middle = System.currentTimeMillis();
-
-			try{
-				writeSinleTarFile(input);			   
-			}
-			catch (IOException ioe){
-				System.out.println(ioe);
-				log += "\nExeption:"+ioe+" \n";
-			}
-//			print = "Serializing Rulestring: : " + (middle2-middle) + " milli seconds =" + (middle2-middle)/1000 +" seconds";
-			print += "\nWriting files: : " + (System.currentTimeMillis()-middle2) + " milli seconds = " + (System.currentTimeMillis()-middle2)/1000 +" seconds";
-			System.out.println(print);
-			writeLogFile(input, print, true);
-//			log += print +"\n";
-			print = "Overall : " + (System.currentTimeMillis()-start) + " milli seconds = " + (System.currentTimeMillis()-start)/1000 +" seconds";
-			System.out.println(print);
-//			log += print +"\n\n";
-			writeLogFile(input, print, true);
-			File outFile = new File(input.getAbsolutePath() + ".tar.bz2");
-			byteLength = outFile.length();
-			
-			int nrOfRules = dcg.getRules().size();
-			int sizeOfRules = dcg.size();
-			double tripleRatio = new Double(sizeOfRules)/new Double(stmtCount);
-			log ="\nNr of triples="+stmtCount+" Nr of Rules="+nrOfRules+" Size of Rules="+sizeOfRules+" ratio(#triples/Rule.size())="+tripleRatio;
-			
-			log+= "\nLength in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB";
-			long n3 = computePlainNTripleBZ2Size(model, input);
-			log += "\n";
-			double sizeRatio =  new Double(byteLength) / new Double(n3);
-			log += "Orginal N3 length in Byte = "+n3+" = "+n3/1024+" KB ="+n3/(1024*1024)+" MB Ratio Our/BZ2="+sizeRatio;
- 			writeLogFile(input, log, true);
-
-//			printDebug(dcg);
+				log+= "\nLength in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB";
+				long n3 = computePlainNTripleBZ2Size(model, input);
+				log += "\n";
+				double sizeRatio =  new Double(byteLength) / new Double(n3);
+				log += "Orginal N3 length in Byte = "+n3+" = "+n3/1024+" KB ="+n3/(1024*1024)+" MB Ratio Our/BZ2="+sizeRatio;
+	 			writeLogFile(input, log, true);
+	
+	 			
+	 			log ="\n\n";
+	 			log+="Nr of Subject/Objecs = "+subjectMap.size()+" Number of Properties="+propertyMap.size();
+	 			writeLogFile(input, log, true);
+	//			printDebug(dcg);
+		 	}catch(Exception e) {
+		 		String out = log+"\n\n";
+		 		out += "Exception: "+e.getMessage()+"\n";
+		 		writeLogFile(input, out, true);
+		 	}
 		}
 	
 	 
@@ -228,16 +243,19 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 
 	@Override
 	public int addIndex(String uri, SPO SPOrO) {
-		int index =-1;
+		int index = -1;
 		switch(SPOrO) {
 			case SUBJECT: 
 				if(subjectMap.containsKey(uri)) {
-					index = subjectMap.get(uri);
+					SubjectCount c = subjectMap.get(uri);
+					index = c.nr;
+					c.count++;
 							break;
 				}	
 				else { // create new one
-					index = subjectMap.size();
-					subjectMap.put(uri, index);
+					SubjectCount c = new SubjectCount(subjectMap.size());
+					index = c.nr;
+					subjectMap.put(uri, c);
 				}
 				break;
 			case PREDICATE: 
@@ -311,8 +329,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		switch(SPOrO) {
 		case SUBJECT:
 			if(subjectMap.containsValue(index)) {
-				for(Entry<String, Integer> e : subjectMap.entrySet()) {
-					if(e.getValue() == index) {
+				for(Entry<String, SubjectCount> e : subjectMap.entrySet()) {
+					if(e.getValue().nr == index) {
 						uri = e.getKey();
 						break;
 					}
@@ -349,6 +367,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	}
 	
 	private void writeTarArchive(File input) throws IOException {
+		
 		 ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
 		    Integer prevProperty = -1;
 		    for(IndexRule rule : dcg.getRules()) {
@@ -422,10 +441,10 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    // write subject index
 		    outputStream = new ByteArrayOutputStream( );
 
-		    for (Entry<String, Integer> subject : this.subjectMap.entrySet()) {
+		    for (Entry<String, SubjectCount> subject : this.subjectMap.entrySet()) {
 		    	outputStream.write( subject.getKey().getBytes());
 		    	outputStream.write( "|".getBytes());
-		    	outputStream.write( subject.getValue().toString().getBytes());
+		    	outputStream.write( (""+subject.getValue().nr).getBytes());
 		    	outputStream.write( "\n".getBytes());
 		    }
 		    byte subjects[] = outputStream.toByteArray( );
@@ -483,12 +502,21 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    os.close();
 	}
 	
-	private void writeSinleTarFile(File input) throws IOException {
+	private void writeSingleTarFile(File input) throws IOException {
+		HashMap<Integer, Integer> subIndexMap = sortFrequenceBased(subjectMap);
+		
+//		for(Entry<String, SubjectCount> sub : subjectMap.entrySet()) {
+//			String out = sub.getKey() +" ("+sub.getValue().count+" ): "+newSubjectMap.get(sub.getValue().nr);
+//			System.out.println(out);
+//		}
+
+		
+		
 		 ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
 		    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".tar.bz2");
 		    OutputStream bzos = new BZip2CompressorOutputStream(os);
 		    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
-
+		    //Prefixes
 		    outputStream.write("\n".getBytes());
 		    for (Entry<String, String>  entry : model.getNsPrefixMap().entrySet()) {
 		    	outputStream.write( entry.getKey().getBytes());
@@ -496,13 +524,13 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    	outputStream.write( entry.getValue().getBytes());
 		    	outputStream.write( "\n".getBytes());
 		    }
-
+		    //SubjectMap
 		    outputStream.write("|||\n".getBytes());
 		    
-		    for (Entry<String, Integer> subject : this.subjectMap.entrySet()) {
+		    for (Entry<String, SubjectCount> subject : this.subjectMap.entrySet()) {
 		    	outputStream.write( subject.getKey().getBytes());
 		    	outputStream.write( "|".getBytes());
-		    	outputStream.write( subject.getValue().toString().getBytes());
+		    	outputStream.write( subIndexMap.get(subject.getValue().nr).toString().getBytes());
 		    	outputStream.write( "\n".getBytes());
 		    }
 
@@ -537,7 +565,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					Collections.sort(subjects);
 				
 					for(int i=0; i<subjects.size();i++) {
-						int val = subjects.get(i);
+						int val = subIndexMap.get(subjects.get(i));
 						outputStream.write(Integer.toString(val-offset).getBytes());
 						offset = val;
 						if (i<subjects.size()-1){
@@ -574,5 +602,21 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    aos.close();
 		    bzos.close();
 		    os.close();
+	}
+	
+	/**
+	 * Method to reorganize subject map frequence based. That means often occuring subjects get a lesser key.
+	 * @param org
+	 * @return HashMap mapping the orginal key to the new one.
+	 */
+	public HashMap<Integer, Integer> sortFrequenceBased(HashMap<String, SubjectCount> org) {
+		HashMap<Integer, Integer> map = new HashMap();
+		List<SubjectCount> list = new ArrayList<SubjectCount>();
+		list.addAll(org.values());
+		Collections.sort(list);
+		for(int i = 0; i<list.size(); i++) {
+			map.put(list.get(i).nr, i);
+			list.get(i).new_number= i;		}
+		return map;
 	}
 }
