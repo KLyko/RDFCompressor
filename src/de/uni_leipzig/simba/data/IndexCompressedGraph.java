@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -136,5 +137,5 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     public List<IndexRule> getRules() {
     	return rules;
     }
-
+   
 }
