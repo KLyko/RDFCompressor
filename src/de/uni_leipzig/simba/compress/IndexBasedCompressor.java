@@ -35,6 +35,19 @@ import de.uni_leipzig.simba.data.SubjectCount;
  *
  */
 public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInterface {
+	
+	/**Used to separate elements in Lists (Subjects, Superrules)*/
+	public static final String LIST_SEP = "|";
+	/**Used to separate property and object index*/
+	public static final String PROP_OBJ_SEP = "-";
+	/**Used to separate P-O Part of a rule from its subjects*/
+	public static final String PO_SUBJ_SEP = "{";
+	/**Used to separate Subjectlist from Super rule list*/
+	public static final String SUBJ_SUPERRULE_SEP = "[";
+	/**Used to separate file parts: Prefixes, Subject dictonionary, Property dictionary, Rules*/
+	public static final String FILE_SEP = "||";
+	
+	
 	String log = "-->One HashMap for object and subject\n" +
 			"--> sorted by props\n" +
 			"--> one tar archive\n " +
@@ -520,12 +533,12 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    outputStream.write("\n".getBytes());
 		    for (Entry<String, String>  entry : model.getNsPrefixMap().entrySet()) {
 		    	outputStream.write( entry.getKey().getBytes());
-		    	outputStream.write( "|".getBytes());
+		    	outputStream.write( LIST_SEP.getBytes());
 		    	outputStream.write( entry.getValue().getBytes());
 		    	outputStream.write( "\n".getBytes());
 		    }
-		    //SubjectMap
-		    outputStream.write("|||\n".getBytes());
+		    //Subject Map
+		    outputStream.write((FILE_SEP+"||\n").getBytes());
 		    
 		    for (Entry<String, SubjectCount> subject : this.subjectMap.entrySet()) {
 		    	outputStream.write( subject.getKey().getBytes());
@@ -534,16 +547,16 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    	outputStream.write( "\n".getBytes());
 		    }
 
-		    outputStream.write("|||\n".getBytes());
-
+		    outputStream.write((FILE_SEP+"||\n").getBytes());
+		    //Property Map
 		    for (Entry<String, Integer> property : this.propertyMap.entrySet()) {
 		    	outputStream.write( property.getKey().getBytes());
 		    	outputStream.write( "|".getBytes());
 		    	outputStream.write( property.getValue().toString().getBytes());
 		    	outputStream.write( "\n".getBytes());
 		    }
-		    
-		    outputStream.write("|||\n".getBytes());
+		    // Rules
+		    outputStream.write((FILE_SEP+"||\n").getBytes());
 		    Integer prevProperty = -1;
 		    for(IndexRule rule : dcg.getRules()) {
 			    IndexProfile profile = rule.getProfile();
@@ -551,14 +564,14 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				//outputStream.write(":".getBytes());
 			    if(prevProperty != profile.getProperty()) {
 					outputStream.write(profile.getProperty().toString().getBytes());
-					outputStream.write("|".getBytes());
+					outputStream.write(PROP_OBJ_SEP.getBytes());
 			    }
 				outputStream.write(profile.getObject().toString().getBytes());
 				Iterator ruleIter = profile.getSubjects().iterator();
 				int offset = 0;
 				prevProperty = profile.getProperty();
 				if(profile.size()>0) {
-					outputStream.write("[".getBytes());
+					outputStream.write(PO_SUBJ_SEP.getBytes());
 			
 					List<Integer> subjects = new LinkedList();
 					for(Integer i : profile.getSubjects()) {
@@ -571,12 +584,12 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 						outputStream.write(Integer.toString(val-offset).getBytes());
 						offset = val;
 						if (i<subjects.size()-1){
-						    outputStream.write("|".getBytes());
+						    outputStream.write(LIST_SEP.getBytes());
 						}
 					}// for each subject
 				}// if rule has subjects
 				if(rule.getParents().size()>0) {
-					outputStream.write("{".getBytes());
+					outputStream.write(SUBJ_SUPERRULE_SEP.getBytes());
 					offset = 0;
 					ruleIter = rule.getParents().iterator();
 					while (ruleIter.hasNext()){
@@ -584,7 +597,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					    outputStream.write(Integer.toString(sr.getNumber()-offset).getBytes());
 					    offset= sr.getNumber();
 					    if (ruleIter.hasNext()){
-					    	outputStream.write("|".getBytes());
+					    	outputStream.write(LIST_SEP.getBytes());
 					    }
 					}// for each parent
 				}// if rule has parents

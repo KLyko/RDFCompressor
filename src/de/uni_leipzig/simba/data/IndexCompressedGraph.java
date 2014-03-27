@@ -19,12 +19,12 @@ import org.apache.log4j.Logger;
 public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	/**redundant for now*/
 	List<IndexRule> rules;
-	TreeSet<IndexRule> ruleHash;
+	HashSet<IndexRule> ruleHash;
 	static Logger logger = Logger.getLogger(IndexCompressedGraph.class);
 	
 	public IndexCompressedGraph() {
 		rules = new LinkedList<IndexRule>();
-		ruleHash = new TreeSet<IndexRule>();
+		ruleHash = new HashSet<IndexRule>();
 	}
 
 	
