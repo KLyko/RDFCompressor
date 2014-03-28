@@ -1,11 +1,13 @@
 package de.uni_leipzig.simba;
 
 import java.io.File;
+import java.io.IOException;
 
 import de.uni_leipzig.simba.compress.Compressor;
 import de.uni_leipzig.simba.compress.CompressorFactory;
 import de.uni_leipzig.simba.compress.CompressorFactory.Type;
 import de.uni_leipzig.simba.compress.IndexBasedCompressor;
+import de.uni_leipzig.simba.decompress.DefaultDecompressor;
 
 public class Application{
 

@@ -58,6 +58,9 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	
 //	HashMap<String, Integer> objectMap = new HashMap();
 	HashMap<String, Integer> propertyMap = new HashMap();
+	
+	HashMap<Integer, Integer> subIndexMap;
+	
 	IndexCompressedGraph dcg; Model model;
 	public IndexBasedCompressor() {
 		//nothing to do here so far.
@@ -141,7 +144,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				writeLogFile(input, print, true);
 	//			log += print +"\n";
 				middle = System.currentTimeMillis();
-	
+				subIndexMap = sortFrequenceBased(subjectMap);
 				try{
 					writeSingleTarFile(input);			   
 				}
@@ -309,7 +312,6 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	
 	public void printDebug(IndexCompressedGraph graph) {
 		System.out.println("Resorted list...");
-		HashMap<Integer, Integer> subIndexMap = sortFrequenceBased(subjectMap);
 		for(Entry<Integer, Integer> e: subIndexMap.entrySet()) {
 			System.out.println(e.getKey() +" => "+e.getValue());
 		}
@@ -526,7 +528,6 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 //	}
 	
 	private void writeSingleTarFile(File input) throws IOException {
-		HashMap<Integer, Integer> subIndexMap = sortFrequenceBased(subjectMap);
 		
 //		for(Entry<String, SubjectCount> sub : subjectMap.entrySet()) {
 //			String out = sub.getKey() +" ("+sub.getValue().count+" ): "+newSubjectMap.get(sub.getValue().nr);
@@ -642,7 +643,9 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		System.out.println(list);
 		for(int i = 0; i < list.size(); i++) {
 			map.put(list.get(i).nr, i);
-			list.get(i).new_number = i;		}
+//			list.get(i).new_number = i;
+//			System.out.println("Mapping "+list.get(i).nr+" to "+i);
+		}
 		return map;
 	}
 }

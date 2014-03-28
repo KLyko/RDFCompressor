@@ -6,7 +6,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import de.uni_leipzig.simba.compress.IndexBasedCompressor;
 import de.uni_leipzig.simba.data.IndexProfile;
@@ -41,17 +43,65 @@ public class DefaultDecompressor implements DeCompressor{
 				 	case 3: lastProp = parseRule(line, lastProp, ruleNr); ruleNr++;break;
 				 }
 			 }
-				 
+		 }
+		 // structure loaded
+		 for(Entry<Integer, IndexRule> e: ruleMap.entrySet()) {
+			System.out.println(e.getKey()+": "+e.getValue()+" "+e.getValue().getParentIndices());
 		 }
 		 
+		 HashSet<String> triples = new HashSet<String>();
 		 
+		 for(Integer rNr : ruleMap.keySet()) {
+			 triples.addAll(buildNTriples(rNr, new HashSet<Integer>()));
+		 }
 		 
-		for(Entry<Integer, IndexRule> e: ruleMap.entrySet()) {
-			System.out.println(e.getKey()+": "+e.getValue()+" "+e.getValue().getParentIndices());
-		}
-		// TODO Auto-generated method stub
+		 for(String s : triples) {
+			 System.out.println(s);
+		 }
+		
+		
+		
+		
 		return null;
 	}
+	
+	/**
+	 * 
+	 * @param ruleNr
+	 * @param init
+	 * @param uris
+	 * @return
+	 */
+	private Set<String> buildNTriples(int ruleNr, Set<Integer> uris) {
+		HashSet<String> triples = new HashSet<String> ();
+		IndexRule r = ruleMap.get(ruleNr);
+		for(Integer sID : r.getProfile().getSubjects()) {
+			String triple = subjects.get(sID) + " " 
+					+ properties.get(r.getProfile().getProperty()) + " "
+					+ subjects.get(r.getProfile().getObject()) +" .";
+			triples.add(triple);
+		}
+		
+		for(Integer sID : uris) {
+			String triple = subjects.get(sID) + " " 
+					+ properties.get(r.getProfile().getProperty()) + " "
+					+ subjects.get(r.getProfile().getObject()) +" .";
+			triples.add(triple);
+		}
+		
+		for(Integer parentID : r.getParentIndices()) { //recursion
+			triples.addAll(buildNTriples(parentID, r.getProfile().getSubjects()));
+		}
+		
+		return triples;
+	}
+	
+	
+/* ###############################################################
+ * 				Parsing methods
+ * ###############################################################
+ * */
+	
 	
 	private void parseAbbreviations(String line) {
 		System.out.println("parse Abbr"+line);
@@ -71,7 +121,6 @@ public class DefaultDecompressor implements DeCompressor{
 	
 	private int parseRule (String line, int prop_before, int ruleNr) {
 		int propNr = prop_before;
-		System.out.println("Parsing: "+ruleNr+": "+line);
 		int split1 = -1;
 		if(line.indexOf("{") != -1) {
 			split1 = line.indexOf("{");
@@ -99,31 +148,36 @@ public class DefaultDecompressor implements DeCompressor{
 		IndexRule rule = new IndexRule(profile);
 		rule.setNumber(ruleNr);
 		if(rest.length()>0) {
-			System.out.println("\t rest:"+rest);
-			int subs = rest.indexOf("{");
-			int supers = rest.indexOf("[");
-//			if(subs != -1) {
+			int supers = line.indexOf("[");
 				//parse subs
 				String substr = rest;
-				if(supers != -1) 
-					substr = rest.substring(0, supers);
+				if(supers != -1) {
+					if( rest.indexOf("[") != -1)
+						substr = rest.substring(0, rest.indexOf("["));
+					else
+						substr = rest;
+				}
 				else
 					substr = rest;
 				if(substr.length()>0) {
 					String[] subjects = substr.split("\\|");
+					int offset = 0;
 					for(String s : subjects) {
-						profile.addSubject(new Integer(s));
+						profile.addSubject(offset+Integer.parseInt(s));
+						offset += Integer.parseInt(s);
 					}
 				}
-//			}
 			
 			if(supers != -1) {
 				//parsing super rules
-				String superstr = rest.substring(supers+1);
-				
+				String superstr = line.substring(supers+1);
+//				System.out.println("parsing supers:"+superstr);
 				String[] rulesStr = superstr.split("\\|");
-				for(String s: rulesStr)
-					rule.addParentIndex(new Integer(s));
+				int offset = 0;
+				for(String s: rulesStr) {
+					rule.addParentIndex(offset+new Integer(s));
+					offset += new Integer(s);
+				}
 			}	
 			
 		}	
