@@ -117,7 +117,11 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					IndexProfile profile = new IndexProfile(indexP, indexO);
 					profile.addSubject(indexS);
 					IndexRule rule = new IndexRule(profile);
-					dcg.addRule(rule);
+					try{
+						dcg.addRule(rule);
+					}catch(Exception e) {
+						e.printStackTrace();
+					}
 					stmtCount++;
 				}
 				print = "Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
@@ -173,7 +177,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	 			log ="\n\n";
 	 			log+="Nr of Subject/Objecs = "+subjectMap.size()+" Number of Properties="+propertyMap.size();
 	 			writeLogFile(input, log, true);
-	//			printDebug(dcg);
+//				printDebug(dcg);
 		 	}catch(Exception e) {
 		 		String out = log+"\n\n";
 		 		out += "Exception: "+e.getMessage()+"\n";
@@ -304,6 +308,11 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	}
 	
 	public void printDebug(IndexCompressedGraph graph) {
+		System.out.println("Resorted list...");
+		HashMap<Integer, Integer> subIndexMap = sortFrequenceBased(subjectMap);
+		for(Entry<Integer, Integer> e: subIndexMap.entrySet()) {
+			System.out.println(e.getKey() +" => "+e.getValue());
+		}
 //		System.out.println("\nCompressed graph:\n"+graph.toString());
 //		System.out.println("Subjects:\n"+subjectMap);
 //
@@ -317,7 +326,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			out+="[";
 			Iterator<Integer> subjectIter = rule.getProfile().getSubjects().iterator();
 			while(subjectIter.hasNext()) {
-				out += getUri(subjectIter.next(), SPO.SUBJECT);
+				int nr = subjectIter.next();
+				out += "("+nr+")"+getUri(nr, SPO.SUBJECT);
 				if(subjectIter.hasNext())
 					out += ", ";
 			}
@@ -341,14 +351,14 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		String uri = "NOT_FOUND";
 		switch(SPOrO) {
 		case SUBJECT:
-			if(subjectMap.containsValue(index)) {
+//			if(subjectMap.containsValue(index)) {
 				for(Entry<String, SubjectCount> e : subjectMap.entrySet()) {
 					if(e.getValue().nr == index) {
 						uri = e.getKey();
 						break;
 					}
 				}
-			}
+//			}
 			break;
 		case PREDICATE:
 			if(propertyMap.containsValue(index)) {
@@ -538,7 +548,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    	outputStream.write( "\n".getBytes());
 		    }
 		    //Subject Map
-		    outputStream.write((FILE_SEP+"||\n").getBytes());
+		    outputStream.write((FILE_SEP+"\n").getBytes());
 		    
 		    for (Entry<String, SubjectCount> subject : this.subjectMap.entrySet()) {
 		    	outputStream.write( subject.getKey().getBytes());
@@ -547,7 +557,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    	outputStream.write( "\n".getBytes());
 		    }
 
-		    outputStream.write((FILE_SEP+"||\n").getBytes());
+		    outputStream.write((FILE_SEP+"\n").getBytes());
 		    //Property Map
 		    for (Entry<String, Integer> property : this.propertyMap.entrySet()) {
 		    	outputStream.write( property.getKey().getBytes());
@@ -556,7 +566,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    	outputStream.write( "\n".getBytes());
 		    }
 		    // Rules
-		    outputStream.write((FILE_SEP+"||\n").getBytes());
+		    outputStream.write((FILE_SEP+"\n").getBytes());
 		    Integer prevProperty = -1;
 		    for(IndexRule rule : dcg.getRules()) {
 			    IndexProfile profile = rule.getProfile();
@@ -566,7 +576,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					outputStream.write(profile.getProperty().toString().getBytes());
 					outputStream.write(PROP_OBJ_SEP.getBytes());
 			    }
-				outputStream.write(profile.getObject().toString().getBytes());
+				outputStream.write(subIndexMap.get(profile.getObject()).toString().getBytes());
 				Iterator ruleIter = profile.getSubjects().iterator();
 				int offset = 0;
 				prevProperty = profile.getProperty();
@@ -603,7 +613,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				}// if rule has parents
 				outputStream.write("\n".getBytes());
 		    }// foreach rule
-		    
+		    System.out.println(outputStream);
 		    byte all[] = outputStream.toByteArray( );
 		    
 		    TarArchiveEntry entry = new TarArchiveEntry("all");
@@ -629,9 +639,10 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		List<SubjectCount> list = new ArrayList<SubjectCount>();
 		list.addAll(org.values());
 		Collections.sort(list);
-		for(int i = 0; i<list.size(); i++) {
+		System.out.println(list);
+		for(int i = 0; i < list.size(); i++) {
 			map.put(list.get(i).nr, i);
-			list.get(i).new_number= i;		}
+			list.get(i).new_number = i;		}
 		return map;
 	}
 }

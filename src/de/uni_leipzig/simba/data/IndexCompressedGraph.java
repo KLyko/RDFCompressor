@@ -1,13 +1,11 @@
 package de.uni_leipzig.simba.data;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
-import java.util.TreeSet;
-
 import org.apache.log4j.Logger;
 
 
@@ -20,35 +18,45 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	/**redundant for now*/
 	List<IndexRule> rules;
 	HashSet<IndexRule> ruleHash;
+	HashMap<Integer, IndexRule> ruleMap;
 	static Logger logger = Logger.getLogger(IndexCompressedGraph.class);
 	
 	public IndexCompressedGraph() {
 		rules = new LinkedList<IndexRule>();
+		ruleMap = new HashMap();
 		ruleHash = new HashSet<IndexRule>();
 	}
 
 	
-	public void addRule(IndexRule r) {
+	public void addRule(IndexRule r) throws Exception {
 		if(!ruleHash.contains(r)) {
 			r.nr = rules.size();
-			rules.add(r);
+//			rules.put(r);
+			ruleMap.put(r.hashCode(), r);
 			ruleHash.add(r);
 		} else {
+			IndexRule o = ruleMap.get(r.hashCode());
+			if(!o.equals(r)) {
+				System.err.println("Retrieved rule isn't the same");
+				throw new Exception("Retrieved rule isn't the same");
+			}
+			o.profile.subjects.addAll(r.profile.subjects);
+			
 //			logger.info("Not adding redundant rule");
-			int nr = -1; IndexRule o;
-			Iterator<IndexRule> it = ruleHash.iterator();
-			while(it.hasNext()) {
-				o = it.next();
-				if(o.equals(r)) {
-					nr = o.nr;
-					o.profile.subjects.addAll(r.profile.subjects);
-					rules.set(nr, o);
-					return;
-				}
-			}
-			if(nr == -1) {
-				System.out.println("Error adding rules");
-			}
+//			int nr = -1; IndexRule o;
+//			Iterator<IndexRule> it = ruleHash.iterator();
+//			while(it.hasNext()) {
+//				o = it.next();
+//				if(o.equals(r)) {
+//					nr = o.nr;
+//					o.profile.subjects.addAll(r.profile.subjects);
+//					rules.set(nr, o);
+//					return;
+//				}
+//			}
+//			if(nr == -1) {
+//				System.out.println("Error adding rules");
+//			}
 		}
 	}
 	
@@ -56,19 +64,21 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	public Set<IndexRule> getSuperRules(IndexRule r) {
 		HashSet<IndexRule> result = new HashSet<IndexRule>();
 		// Collections.sort(rules);
+		
 		for(IndexRule o : rules) {
+//			IndexRule o = e.getValue();
 			if(o.profile.size()<r.profile.size())
 				continue;
 			else {// other has almost as many elements
-				if(!r.profile.equals(o.profile) && // isn't the same
-						!r.profile.subjects.isEmpty() ) // isn't empty
-					if(r.profile.min>=o.profile.min && // check uri ranges
-						r.profile.max<=o.profile.max)
-						if(o.profile.subjects.containsAll(r.profile.subjects) && // other contains all uris of r
-								!o.parents.contains(r)) // avoid double linking to parent
-						{
-								result.add(o);				
-						}
+				if(!r.profile.equals(o.profile))// isn't the same
+				    if(!r.profile.subjects.isEmpty() ) // isn't empty
+						if(r.profile.min>=o.profile.min && // check uri ranges
+							r.profile.max<=o.profile.max)
+							if(o.profile.subjects.containsAll(r.profile.subjects) && // other contains all uris of r
+									!o.parents.contains(r)) // avoid double linking to parent
+							{
+									result.add(o);				
+							}
 			}
 		}
 		return result;
@@ -76,16 +86,18 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 
 	@Override
 	public void computeSuperRules() {
+		rules = new ArrayList<IndexRule>(rules.size());
+		rules.addAll(ruleHash);
     	Collections.sort(rules, new IndexRuleComparator());
     	for(IndexRule r : rules) 
     		r.setNumber(rules.indexOf(r));
 //		Collections.sort(rules); // O(n*log n)
 		//1st compute all supersets
 		for(IndexRule r : rules) { //O(n²)
-//			if(r.getProfile().subjects.size()>1) {
+			if(r.getProfile().subjects.size()>1) {
 				Set<IndexRule> supersets = getSuperRules(r);
 				r.parents.addAll(supersets);
-//			}
+			}
 		}
 		//2nd remove redundant uris in supersets
 		for(IndexRule r : rules) { //O(n)

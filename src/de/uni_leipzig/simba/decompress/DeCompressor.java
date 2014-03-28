@@ -1,6 +1,8 @@
 package de.uni_leipzig.simba.decompress;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
  * 
@@ -11,5 +13,5 @@ import java.io.File;
  */
 public interface DeCompressor {
 
-	public File decompress(File file);
+	public File decompress(File file) throws FileNotFoundException, IOException;
 }

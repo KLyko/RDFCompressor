@@ -17,6 +17,7 @@ public class IndexRule implements IRule<IndexProfile>, Serializable, Comparable{
 	 */
 	List<IRule<IndexProfile>> parents;
 	List<IRule<IProfile>> children;
+	List<Integer> parentsIndices;
 	IndexProfile profile;
 	int nr;
 	
@@ -24,6 +25,7 @@ public class IndexRule implements IRule<IndexProfile>, Serializable, Comparable{
 		this.profile = profile;
 		parents = new LinkedList();
 		children = new LinkedList();
+		parentsIndices = new LinkedList();
 	}
 	@Override
 	public void addParent(IRule<IndexProfile> r) {
@@ -81,5 +83,13 @@ public class IndexRule implements IRule<IndexProfile>, Serializable, Comparable{
 	@Override
 	public List<IRule<IProfile>> getChildren() {
 		return children;
+	}
+	
+	public void addParentIndex(int index) {
+		this.parentsIndices.add(index);
+	}
+	
+	public List<Integer> getParentIndices() {
+		return parentsIndices;
 	}
 }
