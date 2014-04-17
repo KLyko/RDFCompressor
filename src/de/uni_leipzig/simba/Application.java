@@ -41,6 +41,13 @@ public class Application{
 			    compressor.compress(path);
 			}
 	    }
+	    DefaultDecompressor decompr = new DefaultDecompressor();
+	    try {
+			decompr.decompress(new File("resources/dummy_decompress.txt"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
     }
 }

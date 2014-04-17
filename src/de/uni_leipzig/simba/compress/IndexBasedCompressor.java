@@ -55,10 +55,18 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 
 	HashMap<String, String> shortToUri = new HashMap();
 	HashMap<String, SubjectCount> subjectMap = new HashMap();
+	HashMap<Integer, String> indexToSubjectMap = new HashMap();
+	List<SubjectCount> resortSubjectList = new ArrayList<SubjectCount>();
 	
 //	HashMap<String, Integer> objectMap = new HashMap();
+	/**Maps propties to their key*/
 	HashMap<String, Integer> propertyMap = new HashMap();
-	
+	/**Holds the properties where the index is equivalent to the key in the map*/
+	List<String> propertyList = new ArrayList<>();
+	/**
+	 * Maps the old subject index to the new frequence-based one.
+	 * oldIndex (as in subjectMap => new resorted one);
+	 */
 	HashMap<Integer, Integer> subIndexMap;
 	
 	IndexCompressedGraph dcg; Model model;
@@ -84,7 +92,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				shortToUri.putAll(model.getNsPrefixMap());
 				
 				// build inverse list of p/o tuples
-				dcg = new IndexCompressedGraph();
+				dcg = new IndexCompressedGraph(model.size(), true);
 				
 				StmtIterator iter = model.listStatements();
 				
@@ -124,6 +132,9 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 						dcg.addRule(rule);
 					}catch(Exception e) {
 						e.printStackTrace();
+						print = "Error adding rule!";
+						System.out.println(print);
+						writeLogFile(input, print, true);
 					}
 					stmtCount++;
 				}
@@ -142,9 +153,18 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 				System.out.println(print);
 				writeLogFile(input, print, true);
+				
+				System.out.println(dcg.log);
+				writeLogFile(input, print, true);
+				
 	//			log += print +"\n";
 				middle = System.currentTimeMillis();
 				subIndexMap = sortFrequenceBased(subjectMap);
+				long end = System.currentTimeMillis();
+				print = "Sorting Frequence Based took "+(end-middle)+" ms = "+((end-middle)/1000)+ " s";
+				System.out.println(print);
+				writeLogFile(input, print, true);
+				middle2 = System.currentTimeMillis();
 				try{
 					writeSingleTarFile(input);			   
 				}
@@ -152,6 +172,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					System.out.println(ioe);
 					log += "\nExeption:"+ioe+" \n";
 				}
+				
 	//			print = "Serializing Rulestring: : " + (middle2-middle) + " milli seconds =" + (middle2-middle)/1000 +" seconds";
 				print += "\nWriting files: : " + (System.currentTimeMillis()-middle2) + " milli seconds = " + (System.currentTimeMillis()-middle2)/1000 +" seconds";
 				System.out.println(print);
@@ -276,6 +297,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					SubjectCount c = new SubjectCount(subjectMap.size());
 					index = c.nr;
 					subjectMap.put(uri, c);
+					this.indexToSubjectMap.put(index, uri);
 				}
 				break;
 			case PREDICATE: 
@@ -285,6 +307,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				}	
 				else { // create new one
 					index = propertyMap.size();
+					propertyList.add(index, uri);
 					propertyMap.put(uri, propertyMap.size());
 				}				
 				break;
@@ -353,14 +376,15 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		String uri = "NOT_FOUND";
 		switch(SPOrO) {
 		case SUBJECT:
-//			if(subjectMap.containsValue(index)) {
+			/**@TODO check whether faster access via list is possible*/
+			if(subjectMap.containsValue(index)) {
 				for(Entry<String, SubjectCount> e : subjectMap.entrySet()) {
 					if(e.getValue().nr == index) {
 						uri = e.getKey();
 						break;
 					}
 				}
-//			}
+			}
 			break;
 		case PREDICATE:
 			if(propertyMap.containsValue(index)) {
@@ -550,16 +574,28 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    }
 		    //Subject Map
 		    outputStream.write((FILE_SEP+"\n").getBytes());
-		    
-		    for (Entry<String, SubjectCount> subject : this.subjectMap.entrySet()) {
-		    	outputStream.write( subject.getKey().getBytes());
-		    	outputStream.write( "|".getBytes());
-		    	outputStream.write( subIndexMap.get(subject.getValue().nr).toString().getBytes());
+		    // new nr => get old
+		    for(int ind = 0; ind < resortSubjectList.size(); ind++) {
+//		    	outputStream.write((""+ind).getBytes());
+//		    	outputStream.write( "|".getBytes());
+		    	outputStream.write(indexToSubjectMap.get(resortSubjectList.get(ind).nr).getBytes());
 		    	outputStream.write( "\n".getBytes());
 		    }
+//		    outputStream.write( "<--->".getBytes());
+//		    for (Entry<String, SubjectCount> subject : this.subjectMap.entrySet()) {
+//		    	outputStream.write( subject.getKey().getBytes());
+//		    	outputStream.write( "|".getBytes());
+//		    	outputStream.write( subIndexMap.get(subject.getValue().nr).toString().getBytes());
+//		    	outputStream.write( "\n".getBytes());
+//		    }
 
 		    outputStream.write((FILE_SEP+"\n").getBytes());
 		    //Property Map
+		    for(int ind = 0; ind < propertyList.size(); ind++) {
+		    	outputStream.write(propertyList.get(ind).getBytes());
+		    	outputStream.write("\n".getBytes());
+		    }
+		    
 		    for (Entry<String, Integer> property : this.propertyMap.entrySet()) {
 		    	outputStream.write( property.getKey().getBytes());
 		    	outputStream.write( "|".getBytes());
@@ -637,12 +673,13 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	 */
 	public HashMap<Integer, Integer> sortFrequenceBased(HashMap<String, SubjectCount> org) {
 		HashMap<Integer, Integer> map = new HashMap();
-		List<SubjectCount> list = new ArrayList<SubjectCount>();
-		list.addAll(org.values());
-		Collections.sort(list);
-		System.out.println(list);
-		for(int i = 0; i < list.size(); i++) {
-			map.put(list.get(i).nr, i);
+		
+		resortSubjectList.addAll(org.values());
+		Collections.sort(resortSubjectList);
+		System.out.println(resortSubjectList);
+		for(int i = 0; i < resortSubjectList.size(); i++) {
+			map.put(resortSubjectList.get(i).nr, i);
+			
 //			list.get(i).new_number = i;
 //			System.out.println("Mapping "+list.get(i).nr+" to "+i);
 		}

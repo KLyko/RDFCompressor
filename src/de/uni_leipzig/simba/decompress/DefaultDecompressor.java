@@ -108,9 +108,10 @@ public class DefaultDecompressor implements DeCompressor{
 	}
 	
 	private void parseSubjects(String line) {
-		String[] parts = line.split("\\|");
-		System.out.println(parts[1]+"=>"+parts[0]);
-		subjects.put(Integer.parseInt(parts[1]), parts[0]);
+//		String[] parts = line.split("\\|");
+//		System.out.println(parts[1]+"=>"+parts[0]);
+//		subjects.put(Integer.parseInt(parts[1]), parts[0]);
+		subjects.put(subjects.size(), line);
 	}
 	
 	private void parseProperties(String line) {

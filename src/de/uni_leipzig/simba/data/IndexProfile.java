@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import orestes.bloomfilter.BloomFilter;
+
 /**
  * Profile using Indexes
  * @author Klaus Lyko
@@ -16,12 +18,13 @@ public class IndexProfile implements IProfile<Integer, Integer, Integer>, Serial
 	Set<Integer> subjects = new HashSet<Integer>();
 	Integer min=Integer.MAX_VALUE;
 	Integer max=Integer.MIN_VALUE;
-	
+	BloomFilter<Integer> bloom;
 	
 	public IndexProfile(Integer prop, Integer obj) {
 		this.prop = prop;
 		this.obj = obj;
 		subjects = new HashSet<Integer>();
+		bloom = new BloomFilter<Integer>(100, 0.1);
 	}
 	
 	public boolean addSubject(Integer r) {
@@ -53,7 +56,9 @@ public class IndexProfile implements IProfile<Integer, Integer, Integer>, Serial
 	
 	@Override
 	public int hashCode() {
-		return (""+prop.toString()+obj.toString()).hashCode();
+		return (1/2)*(prop+obj)*(prop+obj+1)+obj;
+//		pi(k1, k2) = 1/2(k1 + k2)(k1 + k2 + 1) + k2
+//		return (""+prop.toString()+obj.toString()).hashCode();
 	}
 	
 	public Integer getProperty() {
