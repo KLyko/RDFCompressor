@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+
 import orestes.bloomfilter.BloomFilter;
 
 /**
@@ -13,12 +15,14 @@ import orestes.bloomfilter.BloomFilter;
  */
 public class IndexProfile implements IProfile<Integer, Integer, Integer>, Serializable, Comparable {
 
+	static Logger logger = Logger.getLogger(IndexCompressedGraph.class);
 	Integer prop;
 	Integer obj;
 	Set<Integer> subjects = new HashSet<Integer>();
 	Integer min=Integer.MAX_VALUE;
 	Integer max=Integer.MIN_VALUE;
 	BloomFilter<Integer> bloom;
+	public int errorRate = 0;
 	
 	public IndexProfile(Integer prop, Integer obj) {
 		this.prop = prop;
@@ -32,6 +36,7 @@ public class IndexProfile implements IProfile<Integer, Integer, Integer>, Serial
 			min = r;
 		if(max < r)
 			max = r;
+		bloom.add(r);
 		return subjects.add(r);
 	}
 	
@@ -87,5 +92,23 @@ public class IndexProfile implements IProfile<Integer, Integer, Integer>, Serial
 	@Override
 	public Integer getMaxSubject() {
 		return max;
+	}
+	
+	/**
+	 * Checks whether all Uris of Profile2 are contained within here first using its bloomfilter.
+	 * @param profile2
+	 * @return
+	 */
+	public boolean containsAll(IndexProfile profile2) {
+		if(!bloom.containsAll(profile2.getSubjects())) {
+			return false;
+		} else {
+			boolean answer2 = subjects.containsAll(profile2.subjects);
+			if(!answer2) {
+				errorRate++;
+				logger.debug("False Positive on BloomFilter URIs contains check");
+			}
+			return answer2;				
+		}
 	}
 }

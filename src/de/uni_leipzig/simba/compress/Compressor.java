@@ -8,4 +8,6 @@ public interface Compressor {
 	 * Output bzipped  CompressedGraph
 	 */
     public void compress(File input);
+    
+    public void setLogFileSuffix(String prefix);
 }

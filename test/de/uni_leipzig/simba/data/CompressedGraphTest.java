@@ -57,11 +57,11 @@ public class CompressedGraphTest {
 		Rule r2 = new Rule(prof2);
 		
 		DefaultCompressedGraph g = new DefaultCompressedGraph();
-		g.addRule(r1);
-		g.addRule(r2);
+		g.addRule(r1,1);
+		g.addRule(r2,2);
 		assertTrue(	g.rules.size() == 1);
 		
-		g.addRule(new Rule(prof1b));
+		g.addRule(new Rule(prof1b),3);
 		assertTrue(	g.rules.size() == 1);
 		
 		assertTrue(g.rules.get(0).profile.size() == 5);
@@ -107,8 +107,8 @@ public class CompressedGraphTest {
 		Rule r2 = new Rule(prof2);
 		
 		DefaultCompressedGraph g = new DefaultCompressedGraph();
-		g.addRule(r1);
-		g.addRule(r2);
+		g.addRule(r1,1);
+		g.addRule(r2,2);
 		
 
 		Set<Rule> superOf1 = g.getSuperRules(r1);
@@ -164,9 +164,9 @@ public class CompressedGraphTest {
 		Rule r3 = new Rule(prof3);
 		
 		DefaultCompressedGraph g = new DefaultCompressedGraph();
-		g.addRule(r1);
-		g.addRule(r2);
-		g.addRule(r3);
+		g.addRule(r1,1);
+		g.addRule(r2,2);
+		g.addRule(r3,3);
 		int size0 = g.size();
 		g.computeSuperRules();
 		int size1 = g.size();

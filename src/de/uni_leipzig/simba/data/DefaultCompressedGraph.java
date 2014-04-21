@@ -39,7 +39,7 @@ public class DefaultCompressedGraph implements CompressedGraph<Rule>{
 		this.model = model;
 	}
 	
-	public void addRule(Rule r) {
+	public void addRule(Rule r, Integer i) {
 		if(!ruleHash.contains(r)) {
 			r.nr = rules.size();
 			rules.add(r);

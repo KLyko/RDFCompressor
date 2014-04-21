@@ -40,7 +40,7 @@ public class DefaultCompressor implements Compressor {
 		    profile.addSubject(stmt.getSubject());
 		    Rule rule = new Rule(profile);
 	
-		    dcg.addRule(rule);
+		    dcg.addRule(rule, 1);
 		}
 		System.out.println("\nCompressed graph:\n"+dcg);
 		
@@ -62,4 +62,10 @@ public class DefaultCompressor implements Compressor {
 		    System.out.println(ioe);
 		}
     }
+
+	@Override
+	public void setLogFileSuffix(String prefix) {
+		// TODO Auto-generated method stub
+		
+	}
 }

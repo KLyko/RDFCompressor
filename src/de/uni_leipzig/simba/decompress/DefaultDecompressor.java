@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -49,17 +51,22 @@ public class DefaultDecompressor implements DeCompressor{
 			System.out.println(e.getKey()+": "+e.getValue()+" "+e.getValue().getParentIndices());
 		 }
 		 
-		 HashSet<String> triples = new HashSet<String>();
+		 ArrayList<String> triples = new ArrayList<String>(22);
+		 
 		 
 		 for(Integer rNr : ruleMap.keySet()) {
-			 triples.addAll(buildNTriples(rNr, new HashSet<Integer>()));
+		
+			 Set<String> nts = buildNTriples(rNr, new HashSet<Integer>());
+			 System.out.println("Building rule nr "+rNr+": "+nts);
+			
+			 triples.addAll(nts);
 		 }
-		 
+		 Collections.sort(triples);
 		 for(String s : triples) {
 			 System.out.println(s);
 		 }
 		
-		
+		System.out.println("\n\nNr of triples: "+triples.size());
 		
 		
 		return null;
@@ -74,25 +81,29 @@ public class DefaultDecompressor implements DeCompressor{
 	 */
 	private Set<String> buildNTriples(int ruleNr, Set<Integer> uris) {
 		HashSet<String> triples = new HashSet<String> ();
+
 		IndexRule r = ruleMap.get(ruleNr);
-		for(Integer sID : r.getProfile().getSubjects()) {
+		if(uris.isEmpty()) {
+			for(Integer sID : r.getProfile().getSubjects()) {
+				String triple = subjects.get(sID) + " " 
+						+ properties.get(r.getProfile().getProperty()) + " "
+						+ subjects.get(r.getProfile().getObject()) +" .";
+				triples.add(triple);
+			}
+			for(Integer parentID : r.getParentIndices()) { //recursion
+				triples.addAll(buildNTriples(parentID, r.getProfile().getSubjects()));
+			}
+		} else {
+			for(Integer sID : uris) {
 			String triple = subjects.get(sID) + " " 
 					+ properties.get(r.getProfile().getProperty()) + " "
 					+ subjects.get(r.getProfile().getObject()) +" .";
 			triples.add(triple);
+			}
+			for(Integer parentID : r.getParentIndices()) { //recursion
+				triples.addAll(buildNTriples(parentID, uris));
+			}
 		}
-		
-		for(Integer sID : uris) {
-			String triple = subjects.get(sID) + " " 
-					+ properties.get(r.getProfile().getProperty()) + " "
-					+ subjects.get(r.getProfile().getObject()) +" .";
-			triples.add(triple);
-		}
-		
-		for(Integer parentID : r.getParentIndices()) { //recursion
-			triples.addAll(buildNTriples(parentID, r.getProfile().getSubjects()));
-		}
-		
 		return triples;
 	}
 	
@@ -115,9 +126,10 @@ public class DefaultDecompressor implements DeCompressor{
 	}
 	
 	private void parseProperties(String line) {
-		String[] parts = line.split("\\|");
-		System.out.println(parts[1]+"=>"+parts[0]);
-		properties.put(Integer.parseInt(parts[1]), parts[0]);
+//		String[] parts = line.split("\\|");
+//		System.out.println(parts[1]+"=>"+parts[0]);
+//		properties.put(Integer.parseInt(parts[1]), parts[0]);
+		properties.put(properties.size(), line);
 	}
 	
 	private int parseRule (String line, int prop_before, int ruleNr) {
@@ -134,7 +146,7 @@ public class DefaultDecompressor implements DeCompressor{
 	
 		if(split1 != -1) {
 			po = line.substring(0, split1);
-			rest = line.substring(split1+1);
+			rest = line.substring(split1);
 		}
 		String[] parts = po.split("-");
 		IndexProfile profile;
@@ -144,7 +156,7 @@ public class DefaultDecompressor implements DeCompressor{
 			propNr = new Integer(parts[0]);
 		}
 		else {
-			profile = new IndexProfile(new Integer(parts[0]), prop_before);
+			profile = new IndexProfile(propNr, new Integer(parts[0]) );
 		}
 		IndexRule rule = new IndexRule(profile);
 		rule.setNumber(ruleNr);
@@ -158,9 +170,10 @@ public class DefaultDecompressor implements DeCompressor{
 					else
 						substr = rest;
 				}
-				else
+				else 
 					substr = rest;
 				if(substr.length()>0) {
+					substr = substr.substring(1);
 					String[] subjects = substr.split("\\|");
 					int offset = 0;
 					for(String s : subjects) {

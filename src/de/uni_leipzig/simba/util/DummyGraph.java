@@ -71,10 +71,10 @@ public class DummyGraph {
 		subRule2.addParent(subRule1);
 		
 		DefaultCompressedGraph graph = new DefaultCompressedGraph();
-		graph.addRule(rule1);
-		graph.addRule(rule2);
-		graph.addRule(subRule1);
-		graph.addRule(subRule2);
+		graph.addRule(rule1,1);
+		graph.addRule(rule2,1);
+		graph.addRule(subRule1,1);
+		graph.addRule(subRule2,1);
 		
 		// AddGraph
 		Model addModel = ModelFactory.createDefaultModel();

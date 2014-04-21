@@ -31,7 +31,7 @@ public interface CompressedGraph<IRule> {
 //	 * Adds a Rule. If an equal Rule already exists this one is updated.
 //	 * @param r
 //	 */
-	public void addRule(IRule r) throws Exception;
+	public void addRule(IRule r, Integer i) throws Exception;
 	
 	
 	/**

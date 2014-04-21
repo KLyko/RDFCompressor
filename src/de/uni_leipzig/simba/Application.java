@@ -17,8 +17,12 @@ public class Application{
 	    if (args[0].equals("-c")){
 		File path = new File(args[1]);
 		if (path.exists()){
-		    CompressorFactory cf = new CompressorFactory();
-		    Compressor compressor = cf.getCompressor(Type.INDEX);
+			CompressorFactory cf = new CompressorFactory();
+			Compressor compressor = cf.getCompressor(Type.INDEX);
+			if(args.length >= 4){
+				if(args[2].equals("-f"))
+					compressor.setLogFileSuffix(args[3]);
+			}		   
 		    compressor.compress(path);
 		}
 	    }
@@ -38,16 +42,18 @@ public class Application{
 			if (path.exists()){
 //			    CompressorFactory cf = new CompressorFactory();
 			    IndexBasedCompressor compressor = new IndexBasedCompressor();
+			    compressor.setLogFileSuffix("bloom");
 			    compressor.compress(path);
 			}
 	    }
-	    DefaultDecompressor decompr = new DefaultDecompressor();
-	    try {
-			decompr.decompress(new File("resources/dummy_decompress.txt"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//	    DefaultDecompressor decompr = new DefaultDecompressor();
+//	    try {
+////			decompr.decompress(new File("resources/dummy_decompress.txt"));
+//	    	decompr.decompress(new File("resources/dummy_decompress_SMap.txt"));
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	}
     }
 }
