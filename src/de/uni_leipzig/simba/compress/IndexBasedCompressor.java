@@ -29,6 +29,7 @@ import de.uni_leipzig.simba.data.IndexCompressedGraph;
 import de.uni_leipzig.simba.data.IndexProfile;
 import de.uni_leipzig.simba.data.IndexRule;
 import de.uni_leipzig.simba.data.SubjectCount;
+import de.uni_leipzig.simba.io.ModelLoader;
 /**
  * Implementation of an index based compression:
  * Creates Indexes for all subjects, objects, predicates. And operates on them
@@ -86,8 +87,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			
 		 	long start = System.currentTimeMillis();
 		 	try {
-			 	model = FileManager.get().loadModel( input.toString() );
-		
+//			 	model = FileManager.get().loadModel( input.toString() );
+		 		model = ModelLoader.getModel(input.getAbsolutePath());
 	//			StringWriter graphOutput = new StringWriter();
 	//			model.write(graphOutput, "TURTLE");
 	//			System.out.println(graphOutput);
@@ -158,7 +159,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				writeLogFile(input, print, true);
 				
 				System.out.println(dcg.log);
-				writeLogFile(input, print, true);
+				writeLogFile(input, dcg.log, true);
 				
 	//			log += print +"\n";
 				middle = System.currentTimeMillis();
@@ -209,7 +210,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 //				printDebug(dcg);
 		 	}catch(Exception e) {
 		 		String out = log+"\n\n";
-		 		out += "Exception: "+e.getMessage()+"\n";
+		 		out += "Exception: "+e.getMessage()+"\n"+e;
+		 		e.printStackTrace();
 		 		writeLogFile(input, out, true);
 		 	}
 		}
@@ -508,7 +510,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				}// if rule has parents
 				outputStream.write("\n".getBytes());
 		    }// foreach rule
-		    System.out.println(outputStream);
+		    if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 
+		    	System.out.println(outputStream);
 		    byte all[] = outputStream.toByteArray( );
 		    
 		    TarArchiveEntry entry = new TarArchiveEntry("all");

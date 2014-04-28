@@ -49,12 +49,12 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 					HashMap<Integer, IndexRule> subMap = new HashMap<Integer, IndexRule>();
 					subMap.put(r.profile.obj, r);
 					ruleMap.put(r.profile.prop, subMap);
-					logger.info("Add new rule "+r+" ");
+//					logger.info("Add new rule "+r+" ");
 					addSubjectToRuleEntry(r, subject);
 				} else { // property does exist				
 				IndexRule o = ruleMap.get(r.profile.prop).get(r.profile.obj);
 					if(o == null) { // false positive check
-						logger.error("False positive on bloom filer");
+//						logger.error("False positive on bloom filer");
 						bloom.add(r.profile.prop+"-"+r.profile.obj);
 						ruleMap.get(r.profile.prop).put(r.profile.obj, r);
 						addSubjectToRuleEntry(r, subject);
@@ -65,13 +65,13 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 						}
 						
 						o.profile.subjects.addAll(r.profile.subjects);
-						logger.info("Found existing rule "+o+" "+subject);
+//						logger.info("Found existing rule "+o+" "+subject);
 						addSubjectToRuleEntry(o, subject);
 					}
 				}
 			} else { // not found in bloom
 				bloom.add(r.profile.prop+"-"+r.profile.obj);
-				logger.info("Not in bloom: adding new rule"+r);
+//				logger.info("Not in bloom: adding new rule"+r);
 				if(!ruleMap.containsKey(r.profile.prop))
 					ruleMap.put(r.profile.prop, new HashMap<Integer, IndexRule>());
 				ruleMap.get(r.profile.prop).put(r.profile.obj, r);
@@ -99,7 +99,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 		
 	}
 	
-	@Deprecated
+
 	public Set<IndexRule> getSuperRules(IndexRule r) {
 		HashSet<IndexRule> result = new HashSet<IndexRule>();
 		// Collections.sort(rules);
@@ -127,7 +127,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	@Override
 	public void computeSuperRules() {
 		long start = System.currentTimeMillis();
-		rules = new ArrayList<IndexRule>(rules.size());
+		rules = new ArrayList<IndexRule>(ruleMap.size());
 		for(Entry<Integer, HashMap<Integer, IndexRule>> e : ruleMap.entrySet()) {
 			rules.addAll(e.getValue().values());
 		}
@@ -147,10 +147,14 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 		//1st compute all supersets
 		for(IndexRule r : rules) { //O(n²)
 			if(r.getProfile().subjects.size()>1) {
-//				Set<IndexRule> supersets = getSuperRules(r);
-//				r.parents.addAll(supersets);
-				Set<IndexRule> parents = computeFeasibleSuperRules(r);
-				r.parents.addAll(parents);
+				if(rules.size()<=200) {
+					Set<IndexRule> supersets = getSuperRules(r);
+					r.parents.addAll(supersets);
+				} else {
+					Set<IndexRule> parents = computeFeasibleSuperRules(r);
+					r.parents.addAll(parents);
+				}
+				
 			}
 		
 		}
@@ -242,7 +246,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     	// non empty subs
     	Iterator<Integer> it = subs.iterator();
     	HashSet<IndexRule> returnSet = new HashSet<>();
-    	rules.addAll(subjectToRule.get(it.next()));
+    	rules.addAll(subjectToRule.get(it.next())); // init
     	returnSet.addAll(rules); // need intermediate Set. TODO use other set... 
     	while(it.hasNext() && !rules.isEmpty()) {
     		Set<IndexRule> others = subjectToRule.get(it.next());
@@ -252,6 +256,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     		}
     		rules.clear();
     		rules.addAll(returnSet);
+//    		rules = returnSet;
     	}
     	returnSet.remove(r); // avoid transitivity
     	return returnSet;
