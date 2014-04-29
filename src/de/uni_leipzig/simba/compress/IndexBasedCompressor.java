@@ -2,10 +2,13 @@ package de.uni_leipzig.simba.compress;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -171,8 +174,13 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					writeSingleTarFile(input);			   
 				}
 				catch (IOException ioe){
-					System.out.println(ioe);
+					File errorFile = new File(input.getAbsolutePath()+"_error.txt");
+					PrintStream ps = new PrintStream(errorFile);
+					System.setErr(ps);
+					ioe.printStackTrace();
+					ioe.printStackTrace(ps);
 					log += "\nExeption:"+ioe+" \n";
+					writeLogFile(input, "\nExeption:"+ioe+" \n", true);
 				}
 				
 	//			print = "Serializing Rulestring: : " + (middle2-middle) + " milli seconds =" + (middle2-middle)/1000 +" seconds";
@@ -208,10 +216,20 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	 			if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 
 	 				printDebug(dcg);
 		 	}catch(Exception e) {
-		 		String out = log+"\n\n";
-		 		out += "Exception: "+e.getMessage()+"\n"+e;
-		 		e.printStackTrace();
-		 		writeLogFile(input, out, true);
+		 		File errorFile = new File(input.getAbsolutePath()+"_error.txt");
+				PrintStream ps;
+				try {
+					ps = new PrintStream(errorFile);
+					System.setErr(ps);
+					e.printStackTrace();
+					e.printStackTrace(ps);
+				} catch (FileNotFoundException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+				log += "\nExeption:"+e+" \n";
+				writeLogFile(input, "\nExeption:"+e+" \n", true);
 		 	}
 		}
 	
@@ -243,9 +261,21 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			    aos.close();
 			    bzos.close();
 			    os.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (Exception e) {
+				File errorFile = new File(orgFile.getAbsolutePath()+"_error.txt");
+				PrintStream ps;
+				try {
+					ps = new PrintStream(errorFile);
+					System.setErr(ps);
+					e.printStackTrace();
+					e.printStackTrace(ps);
+				} catch (FileNotFoundException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+				log += "\nExeption:"+e+" \n";
+				writeLogFile(orgFile, "\nExeption:"+e+" \n", true);
 			}
 
 			size = out.length();
