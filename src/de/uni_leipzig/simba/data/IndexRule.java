@@ -20,7 +20,14 @@ public class IndexRule implements IRule<IndexProfile>, Serializable, Comparable{
 	List<Integer> parentsIndices;
 	IndexProfile profile;
 	int nr;
+	boolean superRulesComputed = false;
 	
+	public boolean isSuperRulesComputed() {
+		return superRulesComputed;
+	}
+	public void setSuperRulesComputed(boolean superRulesComputed) {
+		this.superRulesComputed = superRulesComputed;
+	}
 	public IndexRule(IndexProfile profile) {
 		this.profile = profile;
 		parents = new LinkedList();

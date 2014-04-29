@@ -30,7 +30,7 @@ public class Application{
 		//Decompress
 	    }
 	    else{
-		System.out.println("Invalid program call");
+	    	System.out.println("Invalid program call");
 	    }
 	}
 	else{
@@ -55,6 +55,7 @@ public class Application{
 //			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //		}
+	    
 	}
     }
 }

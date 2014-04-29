@@ -1,5 +1,6 @@
 package de.uni_leipzig.simba.data;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,7 +65,9 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 							throw new Exception("Retrieved rule isn't the same");
 						}
 						
-						o.profile.subjects.addAll(r.profile.subjects);
+//						o.profile.subjects.addAll(r.profile.subjects);
+						for(Integer sub : r.profile.subjects)
+							o.profile.addSubject(sub);
 //						logger.info("Found existing rule "+o+" "+subject);
 						addSubjectToRuleEntry(o, subject);
 					}
@@ -92,7 +95,8 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 						System.err.println("Retrieved rule isn't the same");
 						throw new Exception("Retrieved rule isn't the same");
 					}
-					o.profile.subjects.addAll(r.profile.subjects);
+					for(Integer sub : r.profile.subjects)
+						o.profile.addSubject(sub);
 					addSubjectToRuleEntry(o, subject);
 				}
 		}
@@ -104,21 +108,35 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 		HashSet<IndexRule> result = new HashSet<IndexRule>();
 		// Collections.sort(rules);
 		for(IndexRule o : rules) {
+//			System.out.println("\tComparing "+r.getProfile().subjects+" with "+o.getProfile().subjects);
+
 //			IndexRule o = e.getValue();
 			if(o.profile.size()<r.profile.size())
 				continue;
 			if(r.profile.subjects.isEmpty())
 				continue;
 			else {// other has almost as many elements
-				if(!r.profile.equals(o.profile))// isn't the same
+				if(!r.profile.equals(o.profile)) {// isn't the same
+//					System.out.println("\t pofiles doesn't equal");
 //				    if(!r.profile.subjects.isEmpty() ) // isn't empty
+//						System.out.println("\t r: "+r.profile.debugOutPut()+" o: "+o.profile.debugOutPut());
 						if(r.profile.min>=o.profile.min && // check uri ranges
-							r.profile.max<=o.profile.max)
-							if(!o.parents.contains(r)) // avoid double linking to parent
-							if(o.profile.containsAll(r.profile)) // other contains all uris of r
-							{
-									result.add(o);				
+							r.profile.max<=o.profile.max) {
+//							System.out.println("\t min max okay");
+							if(!o.parents.contains(r))  {// avoid double linking to parent
+//								System.out.println("\t o doesn't contain r");
+								if(o.profile.containsAll(r.profile)) // other contains all uris of r
+								{
+										result.add(o);
+										if(o.isSuperRulesComputed()) {
+											result.addAll((Collection<? extends IndexRule>) o.parents);
+//											System.out.println("\tAvoid further computation");
+											return result;
+										}
+								}
 							}
+						}
+				}
 			}
 		}
 		return result;
@@ -134,33 +152,53 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	
     	Collections.sort(rules, new IndexRuleComparator());
     	long mid = System.currentTimeMillis();
+    	log+="\n\tSorting rules by property:"+(mid-start)+" ms = "+((mid-start)/1000)+" s";
+    	System.out.println("\n\tSorting rules by property:"+(mid-start)+" ms = "+((mid-start)/1000)+" s");
+    	
     	for(IndexRule r : rules) {
     		r.setNumber(rules.indexOf(r));
-    	}
-    	
-    	
+    	}    	
     	long end = System.currentTimeMillis();
     	start = end;
-    	log+="\n\tSorting rules by property:"+(mid-start)+" ms = "+((mid-start)/1000)+" s";
     	log+="\n\tAssigning new rule numbers:"+(end-mid)+" ms = "+((end-mid)/1000)+" s";
+    	System.out.println("\n\tAssigning new rule numbers:"+(end-mid)+" ms = "+((end-mid)/1000)+" s");
 //		Collections.sort(rules); // O(n*log n)
 		//1st compute all supersets
-		for(IndexRule r : rules) { //O(n²)
-			if(r.getProfile().subjects.size()>1) {
-				if(rules.size()<=200) {
-					Set<IndexRule> supersets = getSuperRules(r);
+    	if(rules.size()<500) {
+    		for(IndexRule r : rules) { //O(n²)
+    			if(r.getProfile().subjects.size()>1) {
+//    			System.out.println("Computing super rules of "+r);
+    				Set<IndexRule> supersets = getSuperRules(r);
+//    				System.out.println("result:"+supersets);
 					r.parents.addAll(supersets);
-				} else {
-					Set<IndexRule> parents = computeFeasibleSuperRules(r);
-					r.parents.addAll(parents);
-				}
-				
-			}
-		
-		}
+					r.setSuperRulesComputed(true);
+    			}
+    		}
+    	} else {
+    		for(IndexRule r : rules) { 
+    			if(r.getProfile().subjects.size()>1) {
+	    			Set<IndexRule> parents = computeFeasibleSuperRules(r);
+	    			for(IndexRule pp : parents)
+	    				if(!pp.getParents().contains(r))
+	    					r.parents.add(pp);
+	    				else {
+	//    					System.out.println("Doesn't add " + pp +" to " + r + "parents");
+	    				}
+	    			r.setSuperRulesComputed(true);
+    			}
+    		}
+    	}
 		
 		end = System.currentTimeMillis();
-		log+="\n\tComputing super rules took "+(end-start)+" ms = "+((end-start)/1000) +" s";
+		String  println = "\n\tComputing super rules ";
+
+		if(rules.size()<500) 
+			println+=" using quadratic approach ";
+		else
+			println+=" using subject to rule map ";
+		println+=" took "+(end-start)+" ms = "+((end-start)/1000) +" s";
+		log+=println;
+		System.out.println(println);
 		//2nd remove redundant uris in supersets
 		start = end;
 		for(IndexRule r : rules) { //O(n)
@@ -170,6 +208,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 		}
 		end = System.currentTimeMillis();
 		log+="\n\tRemoving subjects took "+(end-start)+" ms = "+((end-start)/1000) +" s";
+		System.out.println("\n\tRemoving subjects took "+(end-start)+" ms = "+((end-start)/1000) +" s");
 	}
 
 	@Override
@@ -258,8 +297,11 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     		rules.addAll(returnSet);
 //    		rules = returnSet;
     	}
+//    	System.out.println("\t org" + returnSet);
     	returnSet.remove(r); // avoid transitivity
+//    	System.out.println("\t red" + returnSet);
     	return returnSet;
     }
+    
 }
  

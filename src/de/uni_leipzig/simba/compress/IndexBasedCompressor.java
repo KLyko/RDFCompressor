@@ -9,7 +9,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,7 +21,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.util.FileManager;
 
 import de.uni_leipzig.simba.data.IRule;
 import de.uni_leipzig.simba.data.IndexCompressedGraph;
@@ -207,7 +205,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	 			writeLogFile(input, log, true);
 	 			log ="\nNumber of falsePositive bloom uri checks = "+bloomErrorRate;
 	 			writeLogFile(input, log, true);
-//				printDebug(dcg);
+	 			if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 
+	 				printDebug(dcg);
 		 	}catch(Exception e) {
 		 		String out = log+"\n\n";
 		 		out += "Exception: "+e.getMessage()+"\n"+e;
@@ -537,7 +536,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		
 		resortSubjectList.addAll(org.values());
 		Collections.sort(resortSubjectList);
-		System.out.println(resortSubjectList);
+//		System.out.println(resortSubjectList);
 		for(int i = 0; i < resortSubjectList.size(); i++) {
 			map.put(resortSubjectList.get(i).nr, i);
 			

@@ -100,7 +100,9 @@ public class IndexProfile implements IProfile<Integer, Integer, Integer>, Serial
 	 * @return
 	 */
 	public boolean containsAll(IndexProfile profile2) {
+		
 		if(!bloom.containsAll(profile2.getSubjects())) {
+//			System.out.println("Testing whether "+subjects+" containsAll "+profile2.subjects+" bloom said no");
 			return false;
 		} else {
 			boolean answer2 = subjects.containsAll(profile2.subjects);
@@ -110,5 +112,9 @@ public class IndexProfile implements IProfile<Integer, Integer, Integer>, Serial
 			}
 			return answer2;				
 		}
+	}
+	
+	public String debugOutPut() {
+		return "min="+min+" max="+max;
 	}
 }
