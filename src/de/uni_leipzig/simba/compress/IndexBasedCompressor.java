@@ -1,11 +1,15 @@
 package de.uni_leipzig.simba.compress;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -20,6 +24,7 @@ import java.util.Map.Entry;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.itadaki.bzip2.BZip2OutputStream;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Statement;
@@ -201,7 +206,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				log ="\nNr of triples="+stmtCount+" Nr of Rules="+nrOfRules+" Size of Rules="+sizeOfRules+" ratio(#triples/Rule.size())="+tripleRatio;
 				
 				log+= "\nLength in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB";
-				long n3 = computePlainNTripleBZ2Size(model, input);
+				long n3 = computeOrginalNTriple(model, input);
 				log += "\n";
 				double sizeRatio =  new Double(byteLength) / new Double(n3);
 				log += "Orginal N3 length in Byte = "+n3+" = "+n3/1024+" KB ="+n3/(1024*1024)+" MB Ratio Our/BZ2="+sizeRatio;
@@ -234,54 +239,100 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		}
 	
 	 
-	 public long computePlainNTripleBZ2Size(Model model, File orgFile) {
-		 long size = 0;				
-		 File out = new File(orgFile.getAbsolutePath()+"_N3.n3.bz2");
-		 if(!out.exists())
-		   try {
+//	 public long computePlainNTripleBZ2Size(Model model, File orgFile) {
+//		 long size = 0;				
+//		 File out = new File(orgFile.getAbsolutePath()+"_N3.n3.bz2");
+//		 if(!out.exists())
+//		   try {
+//
+//			   
+//			   	ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+//				model.write(outputStream, "N3-TRIPLE");
+//
+//			   
+//				OutputStream os = new FileOutputStream(orgFile.getAbsolutePath()+"_N3.n3.bz2");
+//			    OutputStream bzos = new BZip2CompressorOutputStream(os);
+//			    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
+//
+//			    byte n3s[] = outputStream.toByteArray( );
+//
+//			    TarArchiveEntry entry = new TarArchiveEntry(orgFile.getAbsolutePath()+"_N3.n3");
+//			    entry.setSize(n3s.length);
+//			    aos.putArchiveEntry(entry);
+//			    aos.write(n3s);
+//			    aos.closeArchiveEntry();
+//			    
+//			    aos.finish();
+//			    aos.close();
+//			    bzos.close();
+//			    os.close();
+//			} catch (Exception e) {
+//				File errorFile = new File(orgFile.getAbsolutePath()+"_error.txt");
+//				PrintStream ps;
+//				try {
+//					ps = new PrintStream(errorFile);
+//					System.setErr(ps);
+//					e.printStackTrace();
+//					e.printStackTrace(ps);
+//				} catch (FileNotFoundException e1) {
+//					// TODO Auto-generated catch block
+//					e1.printStackTrace();
+//				}
+//				
+//				log += "\nExeption:"+e+" \n";
+//				writeLogFile(orgFile, "\nExeption:"+e+" \n", true);
+//			}
+//
+//			size = out.length();
+//			return size;
+//	 }
+	
+		public long computeOrginalNTriple(Model model, File file) {
+			String fileName = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
+			File out = new File(file.getAbsolutePath()+"_N3.n3.bz2");
+			if(file.exists() && file.canRead() && (fileName.equalsIgnoreCase("nt") || fileName.equalsIgnoreCase("n3"))) {
+			try {
+			InputStream fileInputStream = new BufferedInputStream (new FileInputStream (file));
+			OutputStream fileOutputStream = new BufferedOutputStream (new FileOutputStream (out), 524288);
+			BZip2OutputStream outputStream = new BZip2OutputStream (fileOutputStream);
 
-			   
-			   	ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-				model.write(outputStream, "N3-TRIPLE");
+			byte[] buffer = new byte [524288];
+			int bytesRead;
+			while ((bytesRead = fileInputStream.read (buffer)) != -1) {
+			outputStream.write (buffer, 0, bytesRead);
+			}
+			outputStream.close();
+			fileInputStream.close();
+			} catch(Exception e) {
+			e.printStackTrace();
+			}
+			} else {
+			try {
+			// InputStream fileInputStream = new BufferedInputStream (new FileInputStream (file));
+			OutputStream fileOutputStream = new BufferedOutputStream (new FileOutputStream (out), 524288);
+			BZip2OutputStream outputStream = new BZip2OutputStream (fileOutputStream);
 
-			   
-				OutputStream os = new FileOutputStream(orgFile.getAbsolutePath()+"_N3.n3.bz2");
-			    OutputStream bzos = new BZip2CompressorOutputStream(os);
-			    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
 
-			    byte n3s[] = outputStream.toByteArray( );
-
-			    TarArchiveEntry entry = new TarArchiveEntry(orgFile.getAbsolutePath()+"_N3.n3");
-			    entry.setSize(n3s.length);
-			    aos.putArchiveEntry(entry);
-			    aos.write(n3s);
-			    aos.closeArchiveEntry();
-			    
-			    aos.finish();
-			    aos.close();
-			    bzos.close();
-			    os.close();
-			} catch (Exception e) {
-				File errorFile = new File(orgFile.getAbsolutePath()+"_error.txt");
-				PrintStream ps;
-				try {
-					ps = new PrintStream(errorFile);
-					System.setErr(ps);
-					e.printStackTrace();
-					e.printStackTrace(ps);
-				} catch (FileNotFoundException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				
-				log += "\nExeption:"+e+" \n";
-				writeLogFile(orgFile, "\nExeption:"+e+" \n", true);
+			model.write(outputStream, "N3-TRIPLE");
+			// model.w
+			// byte[] buffer = new byte [524288];
+			// int bytesRead;
+			// while ((bytesRead = fileInputStream.read (buffer)) != -1) {
+			// outputStream.write (buffer, 0, bytesRead);
+			// }
+			outputStream.close();
+			} catch(Exception e) {
+			e.printStackTrace();
+			}
+			}	
+			if(out.exists())
+			return out.length();
+			else
+			return file.length();
 			}
 
-			size = out.length();
-			return size;
-	 }
-	
+
+	 
 	private void writeLogFile(File source, String log, boolean append) {
 		File logFile = new File(source.getAbsolutePath()+"_log"+logFileSuffix+".txt");
 		try {
