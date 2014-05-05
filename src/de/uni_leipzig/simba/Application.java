@@ -1,13 +1,10 @@
 package de.uni_leipzig.simba;
 
 import java.io.File;
-import java.io.IOException;
-
 import de.uni_leipzig.simba.compress.Compressor;
 import de.uni_leipzig.simba.compress.CompressorFactory;
 import de.uni_leipzig.simba.compress.CompressorFactory.Type;
 import de.uni_leipzig.simba.compress.IndexBasedCompressor;
-import de.uni_leipzig.simba.decompress.DefaultDecompressor;
 
 public class Application{
 
@@ -17,8 +14,7 @@ public class Application{
 	    if (args[0].equals("-c")){
 		File path = new File(args[1]);
 		if (path.exists()){
-			CompressorFactory cf = new CompressorFactory();
-			Compressor compressor = cf.getCompressor(Type.INDEX);
+			Compressor compressor = CompressorFactory.getCompressor(Type.INDEX);
 			if(args.length >= 4){
 				if(args[2].equals("-f"))
 					compressor.setLogFileSuffix(args[3]);
