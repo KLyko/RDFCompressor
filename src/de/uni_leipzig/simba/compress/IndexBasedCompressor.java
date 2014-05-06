@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,7 +55,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	public static final String SUBJ_SUPERRULE_SEP = "[";
 	/**Used to separate file parts: Prefixes, Subject dictonionary, Property dictionary, Rules*/
 	public static final String FILE_SEP = "||";
-	
+	/**Used to seperate subject delete list from rest of rule*/
+	public static final String DEL_SUB = "(";
 	
 	String log = "-->One HashMap for object and subject\n" +
 			"--> sorted by props\n" +
@@ -457,6 +457,16 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				out += "}";
 				
 			}
+			if(!rule.deleteGraph.isEmpty()) {
+				out+="DELETE: ";
+				Iterator<Integer> it = rule.deleteGraph.iterator();
+				while(it.hasNext()) {
+					Integer delSub = it.next();
+					out += "("+delSub+")"+getUri(delSub, SPO.SUBJECT);
+					if(it.hasNext())
+						out+=", ";
+				}
+			}
 			System.out.println(out);			
 		}
 //		for(Integer i : graph.subjectToRule.keySet()) {
@@ -515,7 +525,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    	outputStream.write( entry.getKey().getBytes());
 		    	outputStream.write( LIST_SEP.getBytes());
 		    	outputStream.write( entry.getValue().getBytes());
-		    	outputStream.write( "\n".getBytes());
+		    	outputStream.write( "\2".getBytes());
 		    }
 		    //Subject Map
 		    outputStream.write((FILE_SEP+"\n").getBytes());
@@ -524,14 +534,14 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 //		    	outputStream.write((""+ind).getBytes());
 //		    	outputStream.write( "|".getBytes());
 		    	outputStream.write(indexToSubjectMap.get(resortSubjectList.get(ind).nr).getBytes());
-		    	outputStream.write( "\n".getBytes());
+		    	outputStream.write( "\2".getBytes());
 		    }
 
 		    outputStream.write((FILE_SEP+"\n").getBytes());
 		    //Property Map
 		    for(int ind = 0; ind < propertyList.size(); ind++) {
 		    	outputStream.write(propertyList.get(ind).getBytes());
-		    	outputStream.write("\n".getBytes());
+		    	outputStream.write("\2".getBytes());
 		    }
 		    
 //		    for (Entry<String, Integer> property : this.propertyMap.entrySet()) {
@@ -587,7 +597,25 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					    	outputStream.write(LIST_SEP.getBytes());
 					    }
 					}// for each parent
+				}// end if rule has parents
+				if(rule.deleteGraph.size()>0) {
+					outputStream.write(DEL_SUB.getBytes());
+					List<Integer> deleteSubjects = new LinkedList();
+					for(Integer i : rule.deleteGraph) {
+						deleteSubjects.add(subIndexMap.get(i));
+					}
+					Collections.sort(deleteSubjects);
+					offset = 0;
+					for(int i=0; i<deleteSubjects.size();i++) {
+						int val = deleteSubjects.get(i);
+						outputStream.write(Integer.toString(val-offset).getBytes());
+						offset = val;
+						if (i<deleteSubjects.size()-1){
+						    outputStream.write(LIST_SEP.getBytes());
+						}
+					}// for each subject
 				}// if rule has parents
+				
 				outputStream.write("\n".getBytes());
 		    }// foreach rule
 		    if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 

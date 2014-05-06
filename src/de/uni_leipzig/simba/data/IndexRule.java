@@ -1,8 +1,10 @@
 package de.uni_leipzig.simba.data;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Rules contain a Profile which basically resambles an tuple of a resource property and an object with a set
@@ -21,6 +23,7 @@ public class IndexRule implements IRule<IndexProfile>, Serializable, Comparable{
 	IndexProfile profile;
 	int nr;
 	boolean superRulesComputed = false;
+	public Set<Integer> deleteGraph = new HashSet<Integer>();
 	
 	public boolean isSuperRulesComputed() {
 		return superRulesComputed;
