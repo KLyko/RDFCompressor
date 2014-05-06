@@ -198,7 +198,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 		for(IndexRule r : rules) { //O(n²)
 			if(r.getProfile().subjects.size()>1) {
 		    	HashMap<Integer, RuleToDeleteGraph> deleteRules = computeDeleteBasedRules(r);
-				System.out.println("delete Rules for "+r+":");
+//				System.out.println("delete Rules for "+r+":");
 				for(Entry<Integer, RuleToDeleteGraph> e : deleteRules.entrySet()) {
 					
 					RuleToDeleteGraph parent = e.getValue();
@@ -207,12 +207,12 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 						parentRule.deleteGraph.addAll(parent.notIn);
 						r.parents.add(parentRule);
 					} else {
-						System.out.println("Avoiding edge!");
+//						System.out.println("Avoiding edge!");
 					}
 				
 					
 					
-					System.out.println("\t"+e.getValue().parent+" NOT:"+e.getValue().notIn);
+//					System.out.println("\t"+e.getValue().parent+" NOT:"+e.getValue().notIn);
 					
 				}
 				
@@ -220,12 +220,12 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 		}
     	
 		end = System.currentTimeMillis();
-		String  println = "\n\tComputing super rules ";
+		String  println = "\n\tComputing super rules with delete graph ";
 
-		if(rules.size()<500) 
-			println+=" using quadratic approach ";
-		else
-			println+=" using subject to rule map ";
+//		if(rules.size()<500) 
+//			println+=" using quadratic approach ";
+//		else
+//			println+=" using subject to rule map ";
 		println+=" took "+(end-start)+" ms = "+((end-start)/1000) +" s";
 		log+=println;
 		System.out.println(println);
@@ -342,7 +342,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     	HashMap<Integer, RuleToDeleteGraph> rules = new HashMap<Integer, RuleToDeleteGraph>();
     	HashSet<Integer> rulesBeneathThreshold = new HashSet();
 
-		System.out.println("Computing delte rules for "+r);
+//		System.out.println("Computing delte rules for "+r);
 //    	Set<RuleToDeleteGraph> rules = new HashSet<>();
     	int border = r.profile.subjects.size() / 2;
 
