@@ -148,16 +148,19 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					}
 					stmtCount++;
 				}
+				
 				print = "Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 				System.out.println(print);
 	//			log += print +"\n";
 				writeLogFile(input, print, true);
 				middle = System.currentTimeMillis();
+				printDebug(dcg);
 				dcg.computeSuperRules();
 				print = "Computing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 				System.out.println(print);
 				writeLogFile(input, print, true);
 	//			log += print +"\n";
+	
 				middle = System.currentTimeMillis();
 				dcg.removeRedundantParentRules();
 				print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
@@ -288,24 +291,28 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 //	 }
 	
 		public long computeOrginalNTriple(Model model, File file) {
-			String fileName = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
+			String fileName = file.getAbsolutePath()+"_N3.n3.bz2";
+			if(!file.isDirectory()) {
+				fileName = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
+			}
+			
 			File out = new File(file.getAbsolutePath()+"_N3.n3.bz2");
-			if(file.exists() && file.canRead() && (fileName.equalsIgnoreCase("nt") || fileName.equalsIgnoreCase("n3"))) {
-			try {
-			InputStream fileInputStream = new BufferedInputStream (new FileInputStream (file));
-			OutputStream fileOutputStream = new BufferedOutputStream (new FileOutputStream (out), 524288);
-			BZip2OutputStream outputStream = new BZip2OutputStream (fileOutputStream);
-
-			byte[] buffer = new byte [524288];
-			int bytesRead;
-			while ((bytesRead = fileInputStream.read (buffer)) != -1) {
-			outputStream.write (buffer, 0, bytesRead);
-			}
-			outputStream.close();
-			fileInputStream.close();
-			} catch(Exception e) {
-			e.printStackTrace();
-			}
+			if(!file.isDirectory() && file.exists() && file.canRead() && (fileName.equalsIgnoreCase("nt") || fileName.equalsIgnoreCase("n3"))) {
+				try {
+					InputStream fileInputStream = new BufferedInputStream (new FileInputStream (file));
+					OutputStream fileOutputStream = new BufferedOutputStream (new FileOutputStream (out), 524288);
+					BZip2OutputStream outputStream = new BZip2OutputStream (fileOutputStream);
+		
+					byte[] buffer = new byte [524288];
+					int bytesRead;
+					while ((bytesRead = fileInputStream.read (buffer)) != -1) {
+						outputStream.write (buffer, 0, bytesRead);
+					}
+					outputStream.close();
+					fileInputStream.close();
+					} catch(Exception e) {
+						e.printStackTrace();
+					}
 			} else {
 			try {
 			// InputStream fileInputStream = new BufferedInputStream (new FileInputStream (file));
@@ -326,9 +333,9 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			}
 			}	
 			if(out.exists())
-			return out.length();
+				return out.length();
 			else
-			return file.length();
+				return file.length();
 			}
 
 
@@ -441,7 +448,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			while(subjectIter.hasNext()) {
 				int nr = subjectIter.next();
 //				nr = subIndexMap.get(nr);
-				out += "("+nr+")"+getUri(nr, SPO.SUBJECT);
+				out += getUri(nr, SPO.SUBJECT);
 				if(subjectIter.hasNext())
 					out += ", ";
 			}
@@ -462,7 +469,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				Iterator<Integer> it = rule.deleteGraph.iterator();
 				while(it.hasNext()) {
 					Integer delSub = it.next();
-					out += "("+delSub+")"+getUri(delSub, SPO.SUBJECT);
+					out += getUri(delSub, SPO.SUBJECT);
 					if(it.hasNext())
 						out+=", ";
 				}
@@ -525,7 +532,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    	outputStream.write( entry.getKey().getBytes());
 		    	outputStream.write( LIST_SEP.getBytes());
 		    	outputStream.write( entry.getValue().getBytes());
-		    	outputStream.write( "\2".getBytes());
+		    	outputStream.write( "\n".getBytes());
 		    }
 		    //Subject Map
 		    outputStream.write((FILE_SEP+"\n").getBytes());
@@ -534,14 +541,14 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 //		    	outputStream.write((""+ind).getBytes());
 //		    	outputStream.write( "|".getBytes());
 		    	outputStream.write(indexToSubjectMap.get(resortSubjectList.get(ind).nr).getBytes());
-		    	outputStream.write( "\2".getBytes());
+		    	outputStream.write( "\n".getBytes());
 		    }
 
 		    outputStream.write((FILE_SEP+"\n").getBytes());
 		    //Property Map
 		    for(int ind = 0; ind < propertyList.size(); ind++) {
 		    	outputStream.write(propertyList.get(ind).getBytes());
-		    	outputStream.write("\2".getBytes());
+		    	outputStream.write("\n".getBytes());
 		    }
 		    
 //		    for (Entry<String, Integer> property : this.propertyMap.entrySet()) {

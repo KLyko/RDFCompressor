@@ -7,98 +7,74 @@ import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
 
 import de.uni_leipzig.simba.data.CompressedGraph;
-import de.uni_leipzig.simba.data.DefaultCompressedGraph;
-import de.uni_leipzig.simba.data.Profile;
-import de.uni_leipzig.simba.data.Rule;
-
+import de.uni_leipzig.simba.data.IndexCompressedGraph;
+import de.uni_leipzig.simba.data.IndexProfile;
+import de.uni_leipzig.simba.data.IndexRule;
 public class DummyGraph {
 	
 	/**
 	 * 
 	 * @return
+	 * @throws Exception 
 	 */
-	public static DefaultCompressedGraph createDummyDataCompression() {
-		Model model = ModelFactory.createDefaultModel();
+	public static IndexCompressedGraph createDummyDataCompression() throws Exception {
+//		Model model = ModelFactory.createDefaultModel();
 //		
-		//subjects
-		Resource s1 = model.createResource("s1");
-		Resource s2 = model.createResource("s2");
-		Resource s3 = model.createResource("s3");
-		Resource s4 = model.createResource("s4");
-		Resource s5 = model.createResource("s5");
-		Resource s6 = model.createResource("s6");
-		// properties (shared)
-		Property p1 = model.createProperty("p1");
-		Property p2 = model.createProperty("p2");
-		Property is_a = model.createProperty("is_a");
-		// objects	(shared)	
-		Resource o1 = model.createResource("o1");
-		Literal o2 = model.createLiteral("o2");
-		Resource cA = model.createResource("A");
-		Resource cB = model.createResource("B");
+//		//subjects
+//		Resource s1 = model.createResource("s1");//1
+//		Resource s2 = model.createResource("s2");
+//		Resource s3 = model.createResource("s3");
+//		Resource s4 = model.createResource("s4");
+//		Resource s5 = model.createResource("s5");
+//		Resource s6 = model.createResource("s6");
+//		// properties (shared)
+//		Property p1 = model.createProperty("p1");//1
+//		Property p2 = model.createProperty("p2");//2
+//		Property is_a = model.createProperty("is_a");//3
+//		// objects	(shared)	
+//		Resource o1 = model.createResource("o1");//7
+//		Literal o2 = model.createLiteral("o2");//8
+//		Resource cA = model.createResource("A");//9
+//		Resource cB = model.createResource("B");//10
 
-	
-//		profile 
-		Profile prof1 = new Profile(p1, o1);
-		prof1.addSubject(s1);
-		prof1.addSubject(s2);
-		prof1.addSubject(s3);
-		prof1.addSubject(s4);
-		prof1.addSubject(s5);		
+		//		profile 
+		IndexProfile prof1 = new IndexProfile(1, 7);
+		IndexRule rule1 = new IndexRule(prof1);
+//		prof1.addSubject(1);
+//		prof1.addSubject(2);
+//		prof1.addSubject(3);
+//		prof1.addSubject(4);
+//		prof1.addSubject(5);		
+//		
+		IndexProfile prof2 = new IndexProfile(2, 8);
+		IndexRule rule2 = new IndexRule(prof2);
+//		prof2.addSubject(2);
+//		prof2.addSubject(4);
+//		prof2.addSubject(5);
 		
-		Profile prof2 = new Profile(p2, o2);
-		prof2.addSubject(s2);
-		prof2.addSubject(s4);
-		prof2.addSubject(s5);
+		IndexProfile sub1 = new IndexProfile(3, 9);
+		IndexRule rule3 = new IndexRule(sub1);
+//		sub1.addSubject(1);
+//		sub1.addSubject(2);
+//		sub1.addSubject(3);
+//		sub1.addSubject(4);
 		
-		Profile sub1 = new Profile(is_a, cA);
-		sub1.addSubject(s1);
-		sub1.addSubject(s2);
-		sub1.addSubject(s3);
-		sub1.addSubject(s4);
-//		sub1.addSubject(s5);
-//		sub1.addSubject(s6);
-		
-		Profile sub2 = new Profile(is_a, cB);
-		sub1.addSubject(s5);
-		sub1.addSubject(s6);
-		
-//		Rules
-		Rule rule1 = new Rule(prof1);
-		Rule rule2 = new Rule(prof2);
-		Rule subRule1 = new Rule(sub1);
-		Rule subRule2 = new Rule(sub2);
-		subRule2.addParent(subRule1);
-		
-		DefaultCompressedGraph graph = new DefaultCompressedGraph();
-		graph.addRule(rule1,1);
-		graph.addRule(rule2,1);
-		graph.addRule(subRule1,1);
-		graph.addRule(subRule2,1);
-		
-		// AddGraph
-		Model addModel = ModelFactory.createDefaultModel();
-	
+		IndexProfile sub2 = new IndexProfile(3, 10);
+		IndexRule rule4 = new IndexRule(sub2);
+//		sub2.addSubject(5);
+//		sub2.addSubject(6);
 
-		Resource o12 = addModel.createResource("o12");
-		Resource o13 = addModel.createResource("o13");
-		Property p12 = addModel.createProperty("p12");
-		Property p13 = addModel.createProperty("p13");
-		s1.addProperty(p12, o12);
-		s1.addProperty(p13, o13);
-		
-		 s3 = addModel.createResource("s3");
-		Property p32 = addModel.createProperty("p32");
-		s3.addProperty( p32, "o32");
-		
-
-		 s6 = addModel.createResource("s6");
-		Property p61 = addModel.createProperty("p61");
-		s6.addProperty(p61, "o61");
-		
-		graph.setAddModel(addModel);
-		
-		
+		IndexCompressedGraph graph = new IndexCompressedGraph(10, true);
+		for(int i = 1; i<=5;i++) {
+			graph.addRule(rule1, i);
+			if(i==2 || i==4 || i==5) {
+				graph.addRule(rule2, i);
+			}
+			if(i<5)
+				graph.addRule(rule3, i);
+		}
+		graph.addRule(rule4, 5);
+		graph.addRule(rule4, 6);
 		return graph;
 		
 	}

@@ -17,5 +17,6 @@ public interface IRule<IPRofile> {
     
     public List<IRule<IPRofile>> getParents();
     
-    public List<IRule<IProfile>> getChildren();
+    public List<IRule<IndexProfile>> getChildren();
+	void removeParent(IRule<IndexProfile> r);
 }

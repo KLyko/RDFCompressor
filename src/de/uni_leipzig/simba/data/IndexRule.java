@@ -18,7 +18,7 @@ public class IndexRule implements IRule<IndexProfile>, Serializable, Comparable{
 	 * List of Rules which apply to the same subjects.
 	 */
 	List<IRule<IndexProfile>> parents;
-	List<IRule<IProfile>> children;
+	List<IRule<IndexProfile>> children;
 	List<Integer> parentsIndices;
 	IndexProfile profile;
 	int nr;
@@ -43,7 +43,13 @@ public class IndexRule implements IRule<IndexProfile>, Serializable, Comparable{
 	}
 	
 	@Override
-	public void addChild(IRule<IProfile> child) {
+	public void removeParent(IRule<IndexProfile> r) {
+		this.parents.remove(r);
+	}
+	
+	
+	@Override
+	public void addChild(IRule child) {
 		this.children.add(child);
 	}
 	
@@ -90,8 +96,8 @@ public class IndexRule implements IRule<IndexProfile>, Serializable, Comparable{
 	public void setNumber(int nr) {
 		this.nr = nr;
 	}
-	@Override
-	public List<IRule<IProfile>> getChildren() {
+//	@Override
+	public List<IRule<IndexProfile>> getChildren() {
 		return children;
 	}
 	

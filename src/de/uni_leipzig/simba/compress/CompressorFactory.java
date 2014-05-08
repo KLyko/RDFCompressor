@@ -7,13 +7,13 @@ public class CompressorFactory {
 	}
 	
 	public static Compressor getCompressor() {
-		return new DefaultCompressor();
+		return new IndexBasedCompressor();
 	}
 	
 	public static Compressor getCompressor(Type type) {
 		switch(type) {
 			case INDEX: return new IndexBasedCompressor();
-			default: return new DefaultCompressor();
+			default: return new IndexBasedCompressor();
 		}
 	}
 }

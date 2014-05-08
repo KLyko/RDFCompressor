@@ -7,7 +7,7 @@ import java.util.Comparator;
  * @author Klaus Lyko
  *
  */
-public class IndexRuleComparator implements Comparator<IndexRule>{
+public class IndexRulePropertyComparator implements Comparator<IndexRule>{
 
 	@Override
 	public int compare(IndexRule o1, IndexRule o2) {

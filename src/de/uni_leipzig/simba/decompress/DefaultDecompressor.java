@@ -93,12 +93,14 @@ public class DefaultDecompressor implements DeCompressor{
 			for(Integer parentID : r.getParentIndices()) { //recursion
 				triples.addAll(buildNTriples(parentID, r.getProfile().getSubjects()));
 			}
-		} else {
+		} else { // build triples from uris from children rules.
 			for(Integer sID : uris) {
-			String triple = subjects.get(sID) + " " 
-					+ properties.get(r.getProfile().getProperty()) + " "
-					+ subjects.get(r.getProfile().getObject()) +" .";
-			triples.add(triple);
+				if(!r.deleteGraph.contains(sID)) {
+					String triple = subjects.get(sID) + " " 
+							+ properties.get(r.getProfile().getProperty()) + " "
+							+ subjects.get(r.getProfile().getObject()) +" .";
+					triples.add(triple);
+				}
 			}
 			for(Integer parentID : r.getParentIndices()) { //recursion
 				triples.addAll(buildNTriples(parentID, uris));
@@ -140,6 +142,9 @@ public class DefaultDecompressor implements DeCompressor{
 		} else {
 			if(line.indexOf("[") != -1)
 				split1 = line.lastIndexOf("[");
+			else
+				if(line.indexOf("(") != -1)
+					split1 = line.lastIndexOf("(");
 		}
 		String po = line;
 		String rest = "";
@@ -185,6 +190,10 @@ public class DefaultDecompressor implements DeCompressor{
 			if(supers != -1) {
 				//parsing super rules
 				String superstr = line.substring(supers+1);
+				if(line.indexOf("(")!=-1)
+					superstr = line.substring(supers+1, line.indexOf("("));
+			
+				
 //				System.out.println("parsing supers:"+superstr);
 				String[] rulesStr = superstr.split("\\|");
 				int offset = 0;
@@ -194,7 +203,17 @@ public class DefaultDecompressor implements DeCompressor{
 				}
 			}	
 			
-		}	
+		} //rest>0
+		int d = line.indexOf("(");
+		if(d != -1) {
+			String del = line.substring(d+1);
+			String[] subjects = del.split("\\|");
+			int offset = 0;
+			for(String s : subjects) {
+				rule.deleteGraph.add(offset+new Integer(s));
+				offset+=new Integer(s);
+			}
+		}
 		ruleMap.put(ruleNr, rule);
 		return propNr;		
 	}
