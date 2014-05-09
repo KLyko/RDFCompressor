@@ -1,20 +1,15 @@
-//package de.uni_leipzig.simba.data;
-//
-//import static org.junit.Assert.*;
-//
-//import org.junit.Test;
-//
-//import com.hp.hpl.jena.rdf.model.Model;
-//import com.hp.hpl.jena.rdf.model.ModelFactory;
-//import com.hp.hpl.jena.rdf.model.Property;
-//import com.hp.hpl.jena.rdf.model.Resource;
-//
-//public class ProfileTest {
-//
-////	@Test
-////	public void test() {
-////		fail("Not yet implemented");
-////	}
+package de.uni_leipzig.simba.data;
+
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.Resource;
+
+public class ProfileTest {
 //
 //	@Test
 //	public void testEquals() {
@@ -60,4 +55,4 @@
 //		assertTrue(prof1.hashCode() == prof2.hashCode());
 //	}
 //		
-//}
+}

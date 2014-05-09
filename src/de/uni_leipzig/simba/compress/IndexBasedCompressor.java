@@ -154,7 +154,6 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	//			log += print +"\n";
 				writeLogFile(input, print, true);
 				middle = System.currentTimeMillis();
-				printDebug(dcg);
 				dcg.computeSuperRules();
 				print = "Computing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 				System.out.println(print);
@@ -166,7 +165,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 				System.out.println(print);
 				writeLogFile(input, print, true);
-				
+								
 				System.out.println(dcg.log);
 				writeLogFile(input, dcg.log, true);
 				
@@ -428,7 +427,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		return index;
 	}
 	
-	public void printDebug(IndexCompressedGraph graph) {
+	private void printDebug(IndexCompressedGraph graph) {
 //		System.out.println("Resorted list...");
 //		for(Entry<Integer, Integer> e: subIndexMap.entrySet()) {
 //			System.out.println(e.getKey() +" => "+e.getValue());
@@ -454,7 +453,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			}
 			out += "]";
 			if(rule.getParents().size()>0) {
-				out += " {";
+				out += "\t {";
 				Iterator<IRule<IndexProfile>> it = rule.getParents().iterator();
 				while(it.hasNext()) {
 					out+= it.next().getNumber();
@@ -465,7 +464,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				
 			}
 			if(!rule.deleteGraph.isEmpty()) {
-				out+="DELETE: ";
+				out+="\tDELETE: ";
 				Iterator<Integer> it = rule.deleteGraph.iterator();
 				while(it.hasNext()) {
 					Integer delSub = it.next();

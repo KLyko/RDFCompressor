@@ -266,38 +266,40 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 		long end = System.currentTimeMillis();
 		log+="\nRemoving redundant parents took "+(end-start)+" ms = "+((end-start)/1000) +" s";
 	}
-	
-	public void removeSiblingRules() {
-		long start = System.currentTimeMillis();
-		for(IndexRule r : rules) {
-			List<IRule<IndexProfile>> copy = new LinkedList();
-			copy.addAll(r.children);
-			List<IRule<IndexProfile>> children = r.children;
-			for(int i = 0; i<children.size(); i++) {	
-				for(int j=i; j<children.size(); j++) {
-					if(!children.get(i).equals(children.get(j))) {
-						IndexProfile ip = children.get(i).getProfile();
-						IndexProfile jp = children.get(j).getProfile();
-//						if()
-						if(ip.subjects.containsAll(jp.getSubjects())) {
-							copy.remove(children.get(j));
-							r.children.get(j).removeParent(r);
-							System.out.println("Found Sibling of "+r.children.get(i)+": "+r.children.get(j));
-						} else if(jp.subjects.containsAll(ip.getSubjects())){
-							copy.remove(children.get(i));
-							r.children.get(i).removeParent(r);
-							System.out.println("Found Sibling of "+r.children.get(j)+": "+r.children.get(i));
-						}
-					}
-					
-				}
-			}
-			r.children = copy;
-		}
-		long end = System.currentTimeMillis();
-		log+="\nRemoving redundant siblings took "+(end-start)+" ms = "+((end-start)/1000) +" s";
-	}
-	
+//	/**
+//	 * For two rules 
+//	 */
+//	public void removeSiblingRules() {
+//		long start = System.currentTimeMillis();
+//		for(IndexRule r : rules) {
+//			List<IRule<IndexProfile>> copy = new LinkedList();
+//			copy.addAll(r.children);
+//			List<IRule<IndexProfile>> children = r.children;
+//			for(int i = 0; i<children.size(); i++) {	
+//				for(int j=i; j<children.size(); j++) {
+//					if(!children.get(i).equals(children.get(j))) {
+//						IndexProfile ip = children.get(i).getProfile();
+//						IndexProfile jp = children.get(j).getProfile();
+//						if(!ip.subjects.isEmpty() && !jp.subjects.isEmpty())
+//							if(ip.subjects.containsAll(jp.getSubjects())) {
+//								copy.remove(children.get(j));
+//								r.children.get(j).removeParent(r);
+//								System.out.println("Found Sibling of "+r.children.get(i)+": "+r.children.get(j));
+//							} else if(jp.subjects.containsAll(ip.getSubjects())){
+//								copy.remove(children.get(i));
+//								r.children.get(i).removeParent(r);
+//								System.out.println("Found Sibling of "+r.children.get(j)+": "+r.children.get(i));
+//							}
+//					}
+//					
+//				}
+//			}
+//			r.children = copy;
+//		}
+//		long end = System.currentTimeMillis();
+//		log+="\nRemoving redundant siblings took "+(end-start)+" ms = "+((end-start)/1000) +" s";
+//	}
+//	
     public String toString(){
 	String s = "";
 	for (IndexRule rule : this.rules){
@@ -393,15 +395,15 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     	HashMap<Integer, RuleToDeleteGraph> rules = new HashMap<Integer, RuleToDeleteGraph>();
     	HashSet<Integer> rulesBeneathThreshold = new HashSet();
 
-		System.out.println("Computing delte rules for "+r);
+//		System.out.println("Computing delte rules for "+r);
 //    	Set<RuleToDeleteGraph> rules = new HashSet<>();
-    	float su = r.profile.subjects.size();
-    	int border = 5;
-
+//    	float su = r.profile.subjects.size();
+    	int border = 10;
+//    	System.out.println(border);
     	Set<Integer> subs = r.profile.subjects;
 
 //    	if(subs.size()<=1)
-    		System.out.println("border of triple with "+subs.size()+" is: "+border);
+//    		System.out.println("border of triple with "+subs.size()+" is: "+border);
     	if(subs.isEmpty())
     		return rules;
     	//ratio parent: min. 50 % subjects
@@ -413,14 +415,14 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     		Integer s = it.next();
     		subsAlready.add(s);
     		Set<IndexRule> others = subjectToRule.get(s); // rules this s is part of
-    		System.out.println("Looking add subject "+s);
+//    		System.out.println("Looking add subject "+s);
     
     		for(Entry<Integer, RuleToDeleteGraph> rTD : rules.entrySet()) { // for every possible rule
     			// if rule hasNotSubject
     			if(!rTD.getValue().parent.profile.subjects.contains(s)) {
     				if(rTD.getValue().notIn.size()>=border) {
     					toDelete.add(rTD.getKey());
-    					System.out.println("to delete: "+rTD.getValue().parent);
+//    					System.out.println("to delete: "+rTD.getValue().parent);
     				}
     				// add subject to delete
     				rTD.getValue().notIn.add(s);
@@ -430,7 +432,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     			
     			rulesBeneathThreshold.add(del);
     			rules.remove(del);
-    			System.out.println("\t deleteRule due to threshold" + del);
+//    			System.out.println("\t deleteRule due to threshold" + del);
     		}    		
     		for(IndexRule ri : others) {
 //    			System.out.println("\t plays role in "+ri);
@@ -442,17 +444,17 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     						if(!ri.profile.subjects.contains(nr))
     							allNr.add(nr);
     					rules.put(ri.nr, new RuleToDeleteGraph(ri, allNr));
-    					System.out.println("\t adding possible delete rule: "+ri);
+//    					System.out.println("\t adding possible delete rule: "+ri);
     				}
     				
     			}
     		}
     	}    	
-    	System.out.println("Computing delete rules for "+r+"Resultts:");
-    	for(Entry<Integer, RuleToDeleteGraph> rtd:rules.entrySet()) {
-    		if(!rulesBeneathThreshold.contains(rtd.getValue().parent.nr))
-    			System.out.println(rtd.getKey()+": " + rtd);
-    	}
+//    	System.out.println("Computing delete rules for "+r+"Resultts:");
+//    	for(Entry<Integer, RuleToDeleteGraph> rtd:rules.entrySet()) {
+//    		if(!rulesBeneathThreshold.contains(rtd.getValue().parent.nr))
+//    			System.out.println(rtd.getKey()+": " + rtd);
+//    	}
     	return rules;
     }
 }

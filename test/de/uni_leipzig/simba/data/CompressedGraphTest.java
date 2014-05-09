@@ -1,23 +1,23 @@
-//package de.uni_leipzig.simba.data;
-//
-//import static org.junit.Assert.assertTrue;
-//
-//import java.util.Set;
-//
-//import org.junit.Test;
-//
-//import com.hp.hpl.jena.rdf.model.Model;
-//import com.hp.hpl.jena.rdf.model.ModelFactory;
-//import com.hp.hpl.jena.rdf.model.Property;
-//import com.hp.hpl.jena.rdf.model.Resource;
-//
-///**
-// * Test class for Default implementation.
-// * @author Klaus Lyko
-// *
-// */
-//public class CompressedGraphTest {
-//	
+package de.uni_leipzig.simba.data;
+
+import static org.junit.Assert.assertTrue;
+
+import java.util.Set;
+
+import org.junit.Test;
+
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.Resource;
+
+/**
+ * Test class for Default implementation.
+ * @author Klaus Lyko
+ *
+ */
+public class CompressedGraphTest {
+	
 //	@Test
 //	/**
 //	 * Tests if redundant rules are recognized
@@ -173,5 +173,5 @@
 //		System.out.println("Size before supers:" +size0+" - Size with removed supers "+size1);
 //		assertTrue(size1 < size0);
 //	}
-//	
-//}
+	
+}
