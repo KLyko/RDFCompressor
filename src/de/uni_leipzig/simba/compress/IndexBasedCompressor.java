@@ -552,7 +552,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 //		    	outputStream.write( "|".getBytes());
 		    	if(ind < nrOfSubjects)
 		    		outputStream.write(indexToSubjectMap.get(resortSubjectList.get(ind).nr).getBytes());
-		    	outputStream.write(";".getBytes());
+		    	if(ind < nrOfObjects)
+		    		outputStream.write("\2".getBytes());
 		    	if(ind < nrOfObjects)
 		    		outputStream.write(indexToObjectMap.get(resortObjectList.get(ind).nr).getBytes());	
 		    	outputStream.write( "\n".getBytes());
