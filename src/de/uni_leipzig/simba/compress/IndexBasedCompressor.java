@@ -65,11 +65,11 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 
 	HashMap<String, String> shortToUri = new HashMap();
 	HashMap<String, SubjectCount> subjectMap = new HashMap();
-	HashMap<String, SubjectCount> objectMap = new HashMap();
+//	HashMap<String, SubjectCount> objectMap = new HashMap();
 	HashMap<Integer, String> indexToSubjectMap = new HashMap();
-	HashMap<Integer, String> indexToObjectMap = new HashMap();
+//	HashMap<Integer, String> indexToObjectMap = new HashMap();
 	List<SubjectCount> resortSubjectList = new ArrayList<SubjectCount>();
-	List<SubjectCount> resortObjectList = new ArrayList<SubjectCount>();
+//	List<SubjectCount> resortObjectList = new ArrayList<SubjectCount>();
 //	HashMap<String, Integer> objectMap = new HashMap();
 	/**Maps propties to their key*/
 	HashMap<String, Integer> propertyMap = new HashMap();
@@ -80,7 +80,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	 * oldIndex (as in subjectMap => new resorted one);
 	 */
 	HashMap<Integer, Integer> subIndexMap;
-	HashMap<Integer, Integer> objIndexMap;
+//	HashMap<Integer, Integer> objIndexMap;
 	
 	IndexCompressedGraph dcg; Model model;
 	public IndexBasedCompressor() {
@@ -176,7 +176,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				middle = System.currentTimeMillis();
 				
 				subIndexMap = sortSubjectsFrequenceBased(subjectMap);
-				objIndexMap = sortObjectsFrequenceBased(objectMap);
+//				objIndexMap = sortObjectsFrequenceBased(objectMap);
 				
 				long end = System.currentTimeMillis();
 				print = "Sorting Frequence Based took "+(end-middle)+" ms = "+((end-middle)/1000)+ " s";
@@ -412,18 +412,19 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				}				
 				break;
 			case OBJECT:
-				if(objectMap.containsKey(uri)) {
-					SubjectCount c = objectMap.get(uri);
-					index = c.nr;
-					c.count++;
-							break;
-				}	
-				else { // create new one
-					SubjectCount c = new SubjectCount(objectMap.size());
-					index = c.nr;
-					objectMap.put(uri, c);
-					this.indexToObjectMap.put(index, uri);
-				}
+//				if(objectMap.containsKey(uri)) {
+//					SubjectCount c = objectMap.get(uri);
+//					index = c.nr;
+//					c.count++;
+//							break;
+//				}	
+//				else { // create new one
+//					SubjectCount c = new SubjectCount(objectMap.size());
+//					index = c.nr;
+//					objectMap.put(uri, c);
+//					this.indexToObjectMap.put(index, uri);
+//				}
+				index = addIndex(uri, SPO.SUBJECT);
 				break;
 		}
 		return index;
@@ -515,12 +516,13 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		case OBJECT:
 			/**@TODO check whether faster access via list is possible*/
 //			if(subjectMap.containsValue(index)) {
-				for(Entry<String, SubjectCount> e : objectMap.entrySet()) {
-					if(e.getValue().nr == index) {
-						uri = e.getKey();
-						break;
-					}
-				}
+//				for(Entry<String, SubjectCount> e : objectMap.entrySet()) {
+//					if(e.getValue().nr == index) {
+//						uri = e.getKey();
+//						break;
+//					}
+//				}
+			uri = getUri(index, SPO.SUBJECT);
 //			}
 			break;
 		}
@@ -546,16 +548,17 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    outputStream.write((FILE_SEP+"\n").getBytes());
 		    // new nr => get old
 		    int nrOfSubjects = resortSubjectList.size();
-		    int nrOfObjects = resortObjectList.size();
-		    for(int ind = 0; ind < Math.max(nrOfSubjects, nrOfObjects); ind++) {
+//		    int nrOfObjects = resortObjectList.size();
+//		    for(int ind = 0; ind < Math.max(nrOfSubjects, nrOfObjects); ind++) {
+		    for(int ind = 0; ind < nrOfSubjects; ind++) {
 //		    	outputStream.write((""+ind).getBytes());
 //		    	outputStream.write( "|".getBytes());
 		    	if(ind < nrOfSubjects)
 		    		outputStream.write(indexToSubjectMap.get(resortSubjectList.get(ind).nr).getBytes());
-		    	if(ind < nrOfObjects)
-		    		outputStream.write("\2".getBytes());
-		    	if(ind < nrOfObjects)
-		    		outputStream.write(indexToObjectMap.get(resortObjectList.get(ind).nr).getBytes());	
+//		    	if(ind < nrOfObjects)
+//		    		outputStream.write("\2".getBytes());
+//		    	if(ind < nrOfObjects)
+//		    		outputStream.write(indexToObjectMap.get(resortObjectList.get(ind).nr).getBytes());	
 		    	outputStream.write( "\n".getBytes());
 		    }
 
@@ -585,8 +588,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					outputStream.write(profile.getProperty().toString().getBytes());
 					outputStream.write(PROP_OBJ_SEP.getBytes());
 			    }
-				outputStream.write(objIndexMap.get(profile.getObject()).toString().getBytes());
-				
+//				outputStream.write(objIndexMap.get(profile.getObject()).toString().getBytes());
+			    outputStream.write(subIndexMap.get(profile.getObject()).toString().getBytes());
 				Iterator ruleIter = profile.getSubjects().iterator();
 				int offset = 0;
 				prevProperty = profile.getProperty();
@@ -678,20 +681,20 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		return map;
 	}
 	
-	public HashMap<Integer, Integer> sortObjectsFrequenceBased(HashMap<String, SubjectCount> org) {
-		HashMap<Integer, Integer> map = new HashMap();
-		
-		resortObjectList.addAll(org.values());
-		Collections.sort(resortObjectList);
-//		System.out.println(resortSubjectList);
-		for(int i = 0; i < resortObjectList.size(); i++) {
-			map.put(resortObjectList.get(i).nr, i);
-			
-//			list.get(i).new_number = i;
-//			System.out.println("Mapping "+list.get(i).nr+" to "+i);
-		}
-		return map;
-	}
+//	public HashMap<Integer, Integer> sortObjectsFrequenceBased(HashMap<String, SubjectCount> org) {
+//		HashMap<Integer, Integer> map = new HashMap();
+//		
+//		resortObjectList.addAll(org.values());
+//		Collections.sort(resortObjectList);
+////		System.out.println(resortSubjectList);
+//		for(int i = 0; i < resortObjectList.size(); i++) {
+//			map.put(resortObjectList.get(i).nr, i);
+//			
+////			list.get(i).new_number = i;
+////			System.out.println("Mapping "+list.get(i).nr+" to "+i);
+//		}
+//		return map;
+//	}
 	
 	@Override
 	public void setLogFileSuffix(String suffix) {

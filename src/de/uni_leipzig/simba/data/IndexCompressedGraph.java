@@ -397,8 +397,9 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 
 //		System.out.println("Computing delte rules for "+r);
 //    	Set<RuleToDeleteGraph> rules = new HashSet<>();
-//    	float su = r.profile.subjects.size();
-    	int border = 10;
+    	float su = r.profile.subjects.size();
+    	int border = (int) 5;
+    	System.out.println("Border: "+border);
 //    	System.out.println(border);
     	Set<Integer> subs = r.profile.subjects;
 
@@ -420,7 +421,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     		for(Entry<Integer, RuleToDeleteGraph> rTD : rules.entrySet()) { // for every possible rule
     			// if rule hasNotSubject
     			if(!rTD.getValue().parent.profile.subjects.contains(s)) {
-    				if(rTD.getValue().notIn.size()>=border) {
+    				if(rTD.getValue().notIn.size()>border) {
     					toDelete.add(rTD.getKey());
 //    					System.out.println("to delete: "+rTD.getValue().parent);
     				}
@@ -438,14 +439,14 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 //    			System.out.println("\t plays role in "+ri);
 //    			RuleToDeleteGraph ruleDelete = new RuleToDeleteGraph(ri);
     			if(!rules.containsKey(ri.nr)  && !ri.equals(r)) { // fill RuleToDelete set
-    				if(subsAlready.size()<=border) {
+//    				if(subsAlready.size()<=border) {
     					HashSet<Integer> allNr = new HashSet<Integer> ();
     					for(Integer nr : subsAlready)
     						if(!ri.profile.subjects.contains(nr))
     							allNr.add(nr);
     					rules.put(ri.nr, new RuleToDeleteGraph(ri, allNr));
 //    					System.out.println("\t adding possible delete rule: "+ri);
-    				}
+//    				}
     				
     			}
     		}
