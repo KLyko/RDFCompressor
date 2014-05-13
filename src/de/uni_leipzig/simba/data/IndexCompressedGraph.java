@@ -198,6 +198,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     	
 		for(IndexRule r : rules) { //O(n²)
 			if(r.getProfile().subjects.size()>0) {
+//				System.out.println("Computing super rules for "+r);
 		    	HashMap<Integer, RuleToDeleteGraph> deleteRules = computeDeleteBasedRules(r);
 //				System.out.println("delete Rules for "+r+":");
 				for(Entry<Integer, RuleToDeleteGraph> e : deleteRules.entrySet()) {
@@ -399,7 +400,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 //    	Set<RuleToDeleteGraph> rules = new HashSet<>();
     	float su = r.profile.subjects.size();
     	int border = (int) 1;
-    	System.out.println("Border: "+border);
+//    	System.out.println("Border: "+border);
 //    	System.out.println(border);
     	Set<Integer> subs = r.profile.subjects;
 
