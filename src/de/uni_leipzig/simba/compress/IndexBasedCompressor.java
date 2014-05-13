@@ -58,6 +58,12 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	/**Used to seperate subject delete list from rest of rule*/
 	public static final String DEL_SUB = "(";
 	
+	int nrOfSingleSubs = 0;
+	int nrOfAtomicRules = 0;
+	int nrOfDeleteRules = 0;
+	int sizeOfDeleteEntries = 0;
+	int nrOfParents = 0;
+	
 	String log = "-->One HashMap for object and subject\n" +
 			"--> sorted by props\n" +
 			"--> one tar archive\n " +
@@ -223,8 +229,11 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	 			
 	 			log ="\n\n";
 	 			log+="Nr of Subject/Objecs = "+subjectMap.size()+" Number of Properties="+propertyMap.size();
+	 			log+="\nNr of single Subjects/Objects " + nrOfSingleSubs;
+	 			log+="\nNr of atomic rules="+nrOfAtomicRules+"; Nr of parents="+nrOfParents+"; Nr of Delete Rules "+nrOfDeleteRules+"; Size of delete entries="+sizeOfDeleteEntries;
 	 			writeLogFile(input, log, true);
 	 			log ="\nNumber of falsePositive bloom uri checks = "+bloomErrorRate;
+	 			
 	 			writeLogFile(input, log, true);
 	 			if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 
 	 				printDebug(dcg);
@@ -237,7 +246,6 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					e.printStackTrace();
 					e.printStackTrace(ps);
 				} catch (FileNotFoundException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 				
@@ -283,7 +291,6 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 //					e.printStackTrace();
 //					e.printStackTrace(ps);
 //				} catch (FileNotFoundException e1) {
-//					// TODO Auto-generated catch block
 //					e1.printStackTrace();
 //				}
 //				
@@ -387,12 +394,16 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		switch(SPOrO) {
 			case SUBJECT: 
 				if(subjectMap.containsKey(uri)) {
+					
 					SubjectCount c = subjectMap.get(uri);
 					index = c.nr;
 					c.count++;
+					if(c.count==2)
+						nrOfSingleSubs--;
 							break;
 				}	
 				else { // create new one
+					nrOfSingleSubs++;
 					SubjectCount c = new SubjectCount(subjectMap.size());
 					index = c.nr;
 					subjectMap.put(uri, c);
@@ -580,6 +591,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    Integer prevProperty = -1;
 		    
 		    for(IndexRule rule : dcg.getRules()) {
+		    	if(rule.isAtomic())
+		    		nrOfAtomicRules++;
 			    IndexProfile profile = rule.getProfile();
 			    bloomErrorRate+=profile.errorRate;
 				//outputStream.write(Integer.toString(rule.getNumber()).getBytes());
@@ -612,6 +625,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					}// for each subject
 				}// if rule has subjects
 				if(rule.getParents().size()>0) {
+					nrOfParents++;
 					outputStream.write(SUBJ_SUPERRULE_SEP.getBytes());
 					offset = 0;
 					ruleIter = rule.getParents().iterator();
@@ -625,8 +639,10 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 					}// for each parent
 				}// end if rule has parents
 				if(rule.deleteGraph.size()>0) {
+					nrOfDeleteRules++;
 					outputStream.write(DEL_SUB.getBytes());
 					List<Integer> deleteSubjects = new LinkedList();
+					sizeOfDeleteEntries += rule.deleteGraph.size();
 					for(Integer i : rule.deleteGraph) {
 						deleteSubjects.add(subIndexMap.get(i));
 					}

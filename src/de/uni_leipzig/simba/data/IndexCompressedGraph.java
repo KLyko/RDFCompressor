@@ -398,7 +398,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 //		System.out.println("Computing delte rules for "+r);
 //    	Set<RuleToDeleteGraph> rules = new HashSet<>();
     	float su = r.profile.subjects.size();
-    	int border = (int) 5;
+    	int border = (int) 1;
     	System.out.println("Border: "+border);
 //    	System.out.println(border);
     	Set<Integer> subs = r.profile.subjects;

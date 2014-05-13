@@ -23,6 +23,7 @@ public class IndexRule implements IRule<IndexProfile>, Serializable, Comparable{
 	IndexProfile profile;
 	int nr;
 	boolean superRulesComputed = false;
+	
 	public Set<Integer> deleteGraph = new HashSet<Integer>();
 	
 	public boolean isSuperRulesComputed() {
@@ -107,5 +108,18 @@ public class IndexRule implements IRule<IndexProfile>, Serializable, Comparable{
 	
 	public List<Integer> getParentIndices() {
 		return parentsIndices;
+	}
+	
+	/**
+	 * An atomic rule stands for its self: has no parents or children an only one subject.
+	 * @return
+	 */
+	public boolean isAtomic() {
+		if(profile.subjects.size() == 1) {
+			if(parents.isEmpty())
+				if(children.isEmpty())
+					return true;
+		}
+		return false;
 	}
 }
