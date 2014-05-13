@@ -61,7 +61,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 						ruleMap.get(r.profile.prop).put(r.profile.obj, r);
 						addSubjectToRuleEntry(r, subject);
 					} else {
-						if(!o.equals(r)) {//FIXME Doesn't work!!!
+						if(!o.equals(r)) {
 							System.err.println("Retrieved rule isn't the same");
 							throw new Exception("Retrieved rule isn't the same");
 						}
@@ -369,7 +369,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     	Iterator<Integer> it = subs.iterator();
     	HashSet<IndexRule> returnSet = new HashSet<>();
     	rules.addAll(subjectToRule.get(it.next())); // init
-    	returnSet.addAll(rules); // need intermediate Set. TODO use other set... 
+    	returnSet.addAll(rules); // need intermediate Set.  
     	while(it.hasNext() && !rules.isEmpty()) {
     		Set<IndexRule> others = subjectToRule.get(it.next());
     		for(IndexRule ri : rules) {
