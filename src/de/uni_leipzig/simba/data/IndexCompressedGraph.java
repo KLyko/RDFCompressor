@@ -27,6 +27,8 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	/**maps pID -> oID -> Rule*/
 	HashMap<Integer, HashMap<Integer, IndexRule>> ruleMap;
 	
+	public int deleteBorder = 0;
+	
 	/**remeber rules subjects are part of*/
 	public HashMap<Integer, HashSet<IndexRule>> subjectToRule = new HashMap<Integer, HashSet<IndexRule>>();
 	
@@ -34,12 +36,15 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	boolean useBloom = true;
 	BloomFilter<String> bloom;
 	public String log ="";
+	public HashMap<Integer, Integer> newToOld = new HashMap();
 	
-	public IndexCompressedGraph(double expRules, boolean useBloom) {
+	
+	public IndexCompressedGraph(double expRules, boolean useBloom, int deleteBorder) {
 		rules = new LinkedList<IndexRule>();
 		ruleMap = new HashMap();
 //		ruleHash = new HashSet<IndexRule>();
 		this.useBloom = useBloom;
+		this.deleteBorder = deleteBorder;
 		bloom = new BloomFilter<String>(expRules, 0.1);
 	}
 
@@ -165,60 +170,68 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     	System.out.println("\n\tAssigning new rule numbers:"+(end-mid)+" ms = "+((end-mid)/1000)+" s");
 		Collections.sort(rules); // O(n*log n)
 		//1st compute all supersets
-//    	if(rules.size()<500) {
-//    		for(IndexRule r : rules) { //O(n²)
-//    			if(r.getProfile().subjects.size()>1) {
-////    			System.out.println("Computing super rules of "+r);
-//    				Set<IndexRule> supersets = getSuperRules(r);
-//    				HashMap<Integer, RuleToDeleteGraph> deleteRules = computeDeleteBasedRules(r);
-//    				System.out.println("delete Rules for "+r+":");
-//    				for(Entry<Integer, RuleToDeleteGraph> e : deleteRules.entrySet()) {
-//    					System.out.println("\t"+e.getValue().parent+" NOT:"+e.getValue().notIn);
-//    				}
-//    				
-////    				System.out.println("result:"+supersets);
-//					r.parents.addAll(supersets);
-//					r.setSuperRulesComputed(true);
-//    			}
-//    		}
-//    	} else {
-//    		for(IndexRule r : rules) { 
-//    			if(r.getProfile().subjects.size()>1) {
-//	    			Set<IndexRule> parents = computeFeasibleSuperRules(r);
-//	    			for(IndexRule pp : parents)
-//	    				if(!pp.getParents().contains(r))
-//	    					r.parents.add(pp);
-//	    				else {
-//	//    					System.out.println("Doesn't add " + pp +" to " + r + "parents");
+		String  println = "\n\tComputing super rules ";
+		if(this.deleteBorder <= 0) {
+	    	if(rules.size()<500) {
+	    		println += " with subject-set based approach.";
+	    		for(IndexRule r : rules) { //O(n²)
+	    			if(r.getProfile().subjects.size()>1) {
+	//    			System.out.println("Computing super rules of "+r);
+	    				Set<IndexRule> supersets = getSuperRules(r);
+//	    				HashMap<Integer, RuleToDeleteGraph> deleteRules = computeDeleteBasedRules(r);
+//	    				System.out.println("delete Rules for "+r+":");
+//	    				for(Entry<Integer, RuleToDeleteGraph> e : deleteRules.entrySet()) {
+//	    					System.out.println("\t"+e.getValue().parent+" NOT:"+e.getValue().notIn);
 //	    				}
-//	    			r.setSuperRulesComputed(true);
-//    			}
-//    		}
-//    	}
-    	
-		for(IndexRule r : rules) { //O(n²)
-			if(r.getProfile().subjects.size()>0) {
-//				System.out.println("Computing super rules for "+r);
-		    	HashMap<Integer, RuleToDeleteGraph> deleteRules = computeDeleteBasedRules(r);
-//				System.out.println("delete Rules for "+r+":");
-				for(Entry<Integer, RuleToDeleteGraph> e : deleteRules.entrySet()) {
-					RuleToDeleteGraph parent = e.getValue();
-					IndexRule parentRule = parent.parent;
-					if(!parentRule.getParents().contains(r)) {
-						parentRule.deleteGraph.addAll(parent.notIn);
-						r.parents.add(parentRule);
-						parentRule.children.add(r);
-					} else {
-//						System.out.println("Avoiding edge!");
+//	    				
+	//    				System.out.println("result:"+supersets);
+						r.parents.addAll(supersets);
+						r.setSuperRulesComputed(true);
+	    			}
+	    		}
+	    	} else {
+	    		println += " with subject to Rules map.";
+	    		for(IndexRule r : rules) { 
+	    			if(r.getProfile().subjects.size()>1) {
+		    			Set<IndexRule> parents = computeFeasibleSuperRules(r);
+		    			for(IndexRule pp : parents)
+		    				if(!pp.getParents().contains(r))
+		    					r.parents.add(pp);
+		    				else {
+		//    					System.out.println("Doesn't add " + pp +" to " + r + "parents");
+		    				}
+		    			r.setSuperRulesComputed(true);
+	    			}
+	    		}
+	    	}
+		} else {
+			println += " with delete based approach border="+deleteBorder+".";
+			for(IndexRule r : rules) { //O(n²)
+				if(r.getProfile().subjects.size()>0) {
+//					System.out.println("Computing super rules for "+r);
+			    	HashMap<Integer, RuleToDeleteGraph> deleteRules = computeDeleteBasedRules(r, deleteBorder);
+//					System.out.println("delete Rules for "+r+":");
+					for(Entry<Integer, RuleToDeleteGraph> e : deleteRules.entrySet()) {
+						RuleToDeleteGraph parent = e.getValue();
+						IndexRule parentRule = parent.parent;
+						if(!parentRule.getParents().contains(r)) {
+							parentRule.deleteGraph.addAll(parent.notIn);
+							r.parents.add(parentRule);
+							parentRule.children.add(r);
+						} else {
+//							System.out.println("Avoiding edge!");
+						}
+//						System.out.println("\t"+e.getValue().parent+" NOT:"+e.getValue().notIn);
 					}
-//					System.out.println("\t"+e.getValue().parent+" NOT:"+e.getValue().notIn);
+					r.superRulesComputed = true;
 				}
-				r.superRulesComputed = true;
 			}
 		}
     	
+
+    	
 		end = System.currentTimeMillis();
-		String  println = "\n\tComputing super rules with delete graph ";
+		
 //		if(rules.size()<500) 
 //			println+=" using quadratic approach ";
 //		else
@@ -392,14 +405,13 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
      * @param r
      * @return
      */
-    private HashMap<Integer, RuleToDeleteGraph> computeDeleteBasedRules(IndexRule r)  {
+    private HashMap<Integer, RuleToDeleteGraph> computeDeleteBasedRules(IndexRule r, int border)  {
     	HashMap<Integer, RuleToDeleteGraph> rules = new HashMap<Integer, RuleToDeleteGraph>();
     	HashSet<Integer> rulesBeneathThreshold = new HashSet();
 
 //		System.out.println("Computing delte rules for "+r);
 //    	Set<RuleToDeleteGraph> rules = new HashSet<>();
-    	float su = r.profile.subjects.size();
-    	int border = (int) 1;
+  
 //    	System.out.println("Border: "+border);
 //    	System.out.println(border);
     	Set<Integer> subs = r.profile.subjects;
@@ -459,7 +471,23 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 //    	}
     	return rules;
     }
+    
+    /**
+     * Returns List of Rules, atoms at last position.
+     * @return
+     */
+	public List<IndexRule> getResortedRules() {
+		List<IndexRule> copy = new LinkedList<IndexRule>();
+		copy.addAll(rules);
+		Collections.sort(copy, new IndexRuleAtomsCompartor());
+		for(int i = 0; i<copy.size(); i++) {
+			copy.get(i).atomNr = i;
+			newToOld.put(i, copy.get(i).nr);
+		}
+		return copy;
+	}
 }
+
 
 
 class RuleToDeleteGraph {
@@ -488,5 +516,6 @@ class RuleToDeleteGraph {
 	public String toString() {
 		return parent.toString() +" delete: "+notIn.toString();
 	}
+	
 }
  

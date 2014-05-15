@@ -64,7 +64,7 @@ public class DummyGraph {
 //		sub2.addSubject(5);
 //		sub2.addSubject(6);
 
-		IndexCompressedGraph graph = new IndexCompressedGraph(10, true);
+		IndexCompressedGraph graph = new IndexCompressedGraph(10, true, 1);
 		for(int i = 1; i<=5;i++) {
 			graph.addRule(rule1, i);
 			if(i==2 || i==4 || i==5) {

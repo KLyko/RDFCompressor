@@ -93,7 +93,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		//nothing to do here so far.
 	}
 	
-	 public void compress(File input) {
+	 public void compress(File input, int delete) {
 		 	log += input.getAbsolutePath()+"\n";
 		
 			long byteLength = input.length();
@@ -111,7 +111,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				shortToUri.putAll(model.getNsPrefixMap());
 				
 				// build inverse list of p/o tuples
-				dcg = new IndexCompressedGraph(model.size(), true);
+				dcg = new IndexCompressedGraph(model.size(), true, delete);
 				
 				StmtIterator iter = model.listStatements();
 				
@@ -173,21 +173,26 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				dcg.removeRedundantParentRules();
 				print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 				System.out.println(print);
-				writeLogFile(input, print, true);
-								
+				writeLogFile(input, print, true);				
 				System.out.println(dcg.log);
 				writeLogFile(input, dcg.log, true);
 				
 	//			log += print +"\n";
 				middle = System.currentTimeMillis();
-				
 				subIndexMap = sortSubjectsFrequenceBased(subjectMap);
 //				objIndexMap = sortObjectsFrequenceBased(objectMap);
-				
 				long end = System.currentTimeMillis();
 				print = "Sorting Frequence Based took "+(end-middle)+" ms = "+((end-middle)/1000)+ " s";
 				System.out.println(print);
 				writeLogFile(input, print, true);
+				
+				middle = System.currentTimeMillis();
+//				dcg.getResortedRules();
+				end = System.currentTimeMillis();
+				print = "Sorting Frequence Based took "+(end-middle)+" ms = "+((end-middle)/1000)+ " s";
+				System.out.println(print);
+				writeLogFile(input, print, true);
+				
 				middle2 = System.currentTimeMillis();
 				try{
 					writeSingleTarFile(input);			   
@@ -253,54 +258,6 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				writeLogFile(input, "\nExeption:"+e+" \n", true);
 		 	}
 		}
-	
-	 
-//	 public long computePlainNTripleBZ2Size(Model model, File orgFile) {
-//		 long size = 0;				
-//		 File out = new File(orgFile.getAbsolutePath()+"_N3.n3.bz2");
-//		 if(!out.exists())
-//		   try {
-//
-//			   
-//			   	ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-//				model.write(outputStream, "N3-TRIPLE");
-//
-//			   
-//				OutputStream os = new FileOutputStream(orgFile.getAbsolutePath()+"_N3.n3.bz2");
-//			    OutputStream bzos = new BZip2CompressorOutputStream(os);
-//			    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
-//
-//			    byte n3s[] = outputStream.toByteArray( );
-//
-//			    TarArchiveEntry entry = new TarArchiveEntry(orgFile.getAbsolutePath()+"_N3.n3");
-//			    entry.setSize(n3s.length);
-//			    aos.putArchiveEntry(entry);
-//			    aos.write(n3s);
-//			    aos.closeArchiveEntry();
-//			    
-//			    aos.finish();
-//			    aos.close();
-//			    bzos.close();
-//			    os.close();
-//			} catch (Exception e) {
-//				File errorFile = new File(orgFile.getAbsolutePath()+"_error.txt");
-//				PrintStream ps;
-//				try {
-//					ps = new PrintStream(errorFile);
-//					System.setErr(ps);
-//					e.printStackTrace();
-//					e.printStackTrace(ps);
-//				} catch (FileNotFoundException e1) {
-//					e1.printStackTrace();
-//				}
-//				
-//				log += "\nExeption:"+e+" \n";
-//				writeLogFile(orgFile, "\nExeption:"+e+" \n", true);
-//			}
-//
-//			size = out.length();
-//			return size;
-//	 }
 	
 		public long computeOrginalNTriple(Model model, File file) {
 			String fileName = file.getAbsolutePath()+"_N3.n3.bz2";
@@ -454,7 +411,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 //		System.out.println("Objects:\n"+objectMap);
 		System.out.println("GRAPH...\n");
 		for(IndexRule rule: graph.getRules()) {
-			String out= ""+rule.getNumber()+": ";
+//			String out= "("+rule.atomNr+" "+rule.isAtomic()+")"+rule.getNumber()+": ";
+			String out= rule.getNumber()+": ";
 			out+=getUri(rule.getProfile().getProperty(), SPO.PREDICATE)+" - "+getUri(rule.getProfile().getObject(), SPO.OBJECT);
 			out+="[";
 			Iterator<Integer> subjectIter = rule.getProfile().getSubjects().iterator();
@@ -546,7 +504,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		 ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
 		    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".tar.bz2");
 		    OutputStream bzos = new BZip2CompressorOutputStream(os);
-		    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
+//		    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
 		    //Prefixes
 		    outputStream.write("\n".getBytes());
 		    for (Entry<String, String>  entry : model.getNsPrefixMap().entrySet()) {
@@ -663,16 +621,14 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 
 		    	System.out.println(outputStream);
 		    byte all[] = outputStream.toByteArray( );
-		    
-		    TarArchiveEntry entry = new TarArchiveEntry("all");
-		    entry.setSize(all.length);
-		    aos.putArchiveEntry(entry);
-		    aos.write(all);
-		    aos.closeArchiveEntry();
-
-		    
-		    aos.finish();
-		    aos.close();
+		    os.write(all);
+//		    TarArchiveEntry entry = new TarArchiveEntry("all");
+//		    entry.setSize(all.length);
+//		    aos.putArchiveEntry(entry);
+//		    aos.write(all);
+//		    aos.closeArchiveEntry();
+//		    aos.finish();
+//		    aos.close();
 		    bzos.close();
 		    os.close();
 	}

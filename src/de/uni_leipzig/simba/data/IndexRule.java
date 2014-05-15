@@ -22,6 +22,7 @@ public class IndexRule implements IRule<IndexProfile>, Serializable, Comparable{
 	List<Integer> parentsIndices;
 	IndexProfile profile;
 	int nr;
+	public int atomNr; 
 	boolean superRulesComputed = false;
 	
 	public Set<Integer> deleteGraph = new HashSet<Integer>();
