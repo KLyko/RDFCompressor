@@ -20,6 +20,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.itadaki.bzip2.BZip2OutputStream;
 
@@ -497,12 +499,10 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	}
 	
 	private void writeSingleTarFile(File input) throws IOException {
-
-		
-		 ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
 		    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".tar.bz2");
 		    OutputStream bzos = new BZip2CompressorOutputStream(os);
-//		    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
+		    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
 		    //Prefixes
 		    outputStream.write("\n".getBytes());
 		    for (Entry<String, String>  entry : model.getNsPrefixMap().entrySet()) {
@@ -619,14 +619,16 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 
 		    	System.out.println(outputStream);
 		    byte all[] = outputStream.toByteArray( );
-		    os.write(all);
-//		    TarArchiveEntry entry = new TarArchiveEntry("all");
-//		    entry.setSize(all.length);
-//		    aos.putArchiveEntry(entry);
-//		    aos.write(all);
-//		    aos.closeArchiveEntry();
-//		    aos.finish();
-//		    aos.close();
+//		    os.write(all);
+//		    os.flush();
+
+		    TarArchiveEntry entry = new TarArchiveEntry("all");
+		    entry.setSize(all.length);
+		    aos.putArchiveEntry(entry);
+		    aos.write(all);
+		    aos.closeArchiveEntry();
+		    aos.finish();
+		    aos.close();
 		    bzos.close();
 		    os.close();
 	}
