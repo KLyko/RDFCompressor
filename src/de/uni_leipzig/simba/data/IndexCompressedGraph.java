@@ -171,7 +171,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 		Collections.sort(rules); // O(n*log n)
 		//1st compute all supersets
 		String  println = "\n\tComputing super rules ";
-		if(this.deleteBorder <= 0) {
+		if(this.deleteBorder < 0) {
 	    	if(rules.size()<500) {
 	    		println += " with subject-set based approach.";
 	    		for(IndexRule r : rules) { //O(n²)

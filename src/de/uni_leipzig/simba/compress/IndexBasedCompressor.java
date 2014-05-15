@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.itadaki.bzip2.BZip2OutputStream;
 
 import com.hp.hpl.jena.rdf.model.Model;
