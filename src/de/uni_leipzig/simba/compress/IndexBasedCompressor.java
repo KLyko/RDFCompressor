@@ -2,7 +2,6 @@ package de.uni_leipzig.simba.compress;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -20,10 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.itadaki.bzip2.BZip2OutputStream;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Statement;
@@ -102,12 +98,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			
 		 	long start = System.currentTimeMillis();
 		 	try {
-//			 	model = FileManager.get().loadModel( input.toString() );
 		 		model = ModelLoader.getModel(input.getAbsolutePath());
-	//			StringWriter graphOutput = new StringWriter();
-	//			model.write(graphOutput, "TURTLE");
-	//			System.out.println(graphOutput);
-				
 				shortToUri.putAll(model.getNsPrefixMap());
 				
 				// build inverse list of p/o tuples
@@ -216,7 +207,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				System.out.println(print);
 	//			log += print +"\n\n";
 				writeLogFile(input, print, true);
-				File outFile = new File(input.getAbsolutePath() + ".tar.bz2");
+				File outFile = new File(input.getAbsolutePath() + ".cp.bz2");
 				byteLength = outFile.length();
 				
 				int nrOfRules = dcg.getRules().size();
@@ -258,55 +249,6 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				writeLogFile(input, "\nExeption:"+e+" \n", true);
 		 	}
 		}
-	
-		public long computeOrginalNTriple(Model model, File file) {
-			String fileName = file.getAbsolutePath()+"_N3.n3.bz2";
-			if(!file.isDirectory()) {
-				fileName = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
-			}
-			
-			File out = new File(file.getAbsolutePath()+"_N3.n3.bz2");
-			if(!file.isDirectory() && file.exists() && file.canRead() && (fileName.equalsIgnoreCase("nt") || fileName.equalsIgnoreCase("n3"))) {
-				try {
-					InputStream fileInputStream = new BufferedInputStream (new FileInputStream (file));
-					OutputStream fileOutputStream = new BufferedOutputStream (new FileOutputStream (out), 524288);
-					BZip2OutputStream outputStream = new BZip2OutputStream (fileOutputStream);
-		
-					byte[] buffer = new byte [524288];
-					int bytesRead;
-					while ((bytesRead = fileInputStream.read (buffer)) != -1) {
-						outputStream.write (buffer, 0, bytesRead);
-					}
-					outputStream.close();
-					fileInputStream.close();
-					} catch(Exception e) {
-						e.printStackTrace();
-					}
-			} else {
-			try {
-			// InputStream fileInputStream = new BufferedInputStream (new FileInputStream (file));
-			OutputStream fileOutputStream = new BufferedOutputStream (new FileOutputStream (out), 524288);
-			BZip2OutputStream outputStream = new BZip2OutputStream (fileOutputStream);
-
-
-			model.write(outputStream, "N3-TRIPLE");
-			// model.w
-			// byte[] buffer = new byte [524288];
-			// int bytesRead;
-			// while ((bytesRead = fileInputStream.read (buffer)) != -1) {
-			// outputStream.write (buffer, 0, bytesRead);
-			// }
-			outputStream.close();
-			} catch(Exception e) {
-			e.printStackTrace();
-			}
-			}	
-			if(out.exists())
-				return out.length();
-			else
-				return file.length();
-			}
-
 
 	 
 	private void writeLogFile(File source, String log, boolean append) {
@@ -499,12 +441,10 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	}
 	
 	private void writeSingleTarFile(File input) throws IOException {
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-		    OutputStream os = new FileOutputStream(input.getAbsolutePath() + ".tar.bz2");
-		    OutputStream bzos = new BZip2CompressorOutputStream(os);
-		    TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
+		 OutputStream fos = new BufferedOutputStream(new FileOutputStream(input.getAbsolutePath() + ".cp.bz2"));
+         BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
 		    //Prefixes
-		    outputStream.write("\n".getBytes());
+//		    outputStream.write("\n".getBytes());
 		    for (Entry<String, String>  entry : model.getNsPrefixMap().entrySet()) {
 		    	outputStream.write( entry.getKey().getBytes());
 		    	outputStream.write( LIST_SEP.getBytes());
@@ -616,22 +556,50 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				
 				outputStream.write("\n".getBytes());
 		    }// foreach rule
-		    if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 
-		    	System.out.println(outputStream);
-		    byte all[] = outputStream.toByteArray( );
-//		    os.write(all);
-//		    os.flush();
-
-		    TarArchiveEntry entry = new TarArchiveEntry("all");
-		    entry.setSize(all.length);
-		    aos.putArchiveEntry(entry);
-		    aos.write(all);
-		    aos.closeArchiveEntry();
-		    aos.finish();
-		    aos.close();
-		    bzos.close();
-		    os.close();
+		    outputStream.close();
+            fos.close();
 	}
+	
+	private long computeOrginalNTriple(Model model, File file) {
+		String fileName = file.getAbsolutePath()+"_N3.n3.bz2";
+		if(!file.isDirectory()) {
+			fileName = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
+		}
+		File out = new File(file.getAbsolutePath()+"_N3.n3.bz2");
+		if(!file.isDirectory() && file.exists() && file.canRead() && (fileName.equalsIgnoreCase("nt") || fileName.equalsIgnoreCase("n3"))) {
+			try {
+				InputStream fileInputStream = new BufferedInputStream (new FileInputStream (file));
+				OutputStream fos = new BufferedOutputStream(new FileOutputStream(out));
+		        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
+		        
+				byte[] buffer = new byte [524288];
+				int bytesRead;
+				while ((bytesRead = fileInputStream.read (buffer)) != -1) {
+					outputStream.write (buffer, 0, bytesRead);
+				}
+				outputStream.close();
+				fileInputStream.close();
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+		} else {
+			try {
+				OutputStream fos = new BufferedOutputStream(new FileOutputStream(out));
+		        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
+			    
+				model.write(outputStream, "N3-TRIPLE");
+			
+				outputStream.close();
+				fos.close();
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		if(out.exists())
+			return out.length();
+		else
+			return file.length();
+}
 	
 	/**
 	 * Method to reorganize subject map frequence based. That means often occuring subjects get a lesser key.
