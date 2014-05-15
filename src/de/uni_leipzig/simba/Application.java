@@ -54,7 +54,7 @@ public class Application{
   				Compressor compressor = CompressorFactory.getCompressor(Type.INDEX);
   				if(cmd.hasOption("f"))
   					compressor.setLogFileSuffix(cmd.getOptionValue("f"));
-  				int delete = 0;
+  				int delete = -1;
   				if(cmd.hasOption("del")) {
   					delete = Integer.parseInt(cmd.getOptionValue("del"));
   				}
