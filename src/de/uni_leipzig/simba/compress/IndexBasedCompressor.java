@@ -587,7 +587,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				OutputStream fos = new BufferedOutputStream(new FileOutputStream(out));
 		        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
 			    
-				model.write(outputStream, "N3-TRIPLE");
+				model.write(outputStream, "N-TRIPLE");
 			
 				outputStream.close();
 				fos.close();

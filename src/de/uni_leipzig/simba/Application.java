@@ -27,16 +27,16 @@ public class Application{
 	
 	
     public static void main(String[] args){
-    	  if(System.getProperty("user.name").equalsIgnoreCase("lydko")) {
-  	    	File path = new File("resources/dummy_data2.nt");
+    	  if(System.getProperty("user.name").equalsIgnoreCase("lyko")) {
+  	    	File path = new File("resources/mbz_jamendo.rdf");
 //  	    	path = new File("uba/lubm50/");
 //  	    	path = new File("resources/wordnet-membermeronym.rdf");
 //  	    	path = new File ("resources/archive_hub_dump.nt");
   			if (path.exists()){
 //  			    CompressorFactory cf = new CompressorFactory();
   			    IndexBasedCompressor compressor = new IndexBasedCompressor();
-  			    compressor.setLogFileSuffix("bloom");
-  			    compressor.compress(path, 5);
+  			    compressor.setLogFileSuffix("bloomNT");
+  			    compressor.compress(path, -1);
   			}
   	    } else {
   	    	CommandLineParser parser = new BasicParser();

@@ -36,7 +36,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	boolean useBloom = true;
 	BloomFilter<String> bloom;
 	public String log ="";
-	public HashMap<Integer, Integer> newToOld = new HashMap();
+//	public HashMap<Integer, Integer> newToOld = new HashMap();
 	
 	
 	public IndexCompressedGraph(double expRules, boolean useBloom, int deleteBorder) {
@@ -472,20 +472,20 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     	return rules;
     }
     
-    /**
-     * Returns List of Rules, atoms at last position.
-     * @return
-     */
-	public List<IndexRule> getResortedRules() {
-		List<IndexRule> copy = new LinkedList<IndexRule>();
-		copy.addAll(rules);
-		Collections.sort(copy, new IndexRuleAtomsCompartor());
-		for(int i = 0; i<copy.size(); i++) {
-			copy.get(i).atomNr = i;
-			newToOld.put(i, copy.get(i).nr);
-		}
-		return copy;
-	}
+//    /**
+//     * Returns List of Rules, atoms at last position.
+//     * @return
+//     */
+//	public List<IndexRule> getResortedRules() {
+//		List<IndexRule> copy = new LinkedList<IndexRule>();
+//		copy.addAll(rules);
+//		Collections.sort(copy, new IndexRuleAtomsCompartor());
+//		for(int i = 0; i<copy.size(); i++) {
+//			copy.get(i).atomNr = i;
+//			newToOld.put(i, copy.get(i).nr);
+//		}
+//		return copy;
+//	}
 }
 
 
