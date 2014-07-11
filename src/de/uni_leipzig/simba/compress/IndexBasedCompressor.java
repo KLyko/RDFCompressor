@@ -23,6 +23,8 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 
@@ -150,8 +152,22 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 							writeLogFile(input, print, true);
 						}
 						stmtCount++;
-					} else {
-						valueModel.add(stmt);
+					} else { // object is no Resource (e.g. literal)
+						String s = stmt.getSubject().toString();
+						try{
+							s = model.shortForm(s);
+						} catch(NullPointerException npe){ /*bnode*/ }
+						
+						String p = stmt.getPredicate().getURI();
+						try{
+							p = model.shortForm(p);
+						} catch(NullPointerException npe){ /*bnode*/ }
+						// alse use indices
+						int indexS = addIndex(s, SPO.SUBJECT);
+						int indexP = addIndex(p, SPO.PREDICATE);
+						Resource sIR = valueModel.createResource(""+indexS);
+						Property pIR = valueModel.createProperty(""+indexP);
+						valueModel.add(sIR, pIR, stmt.getObject());
 						valueStmtCount++;
 					}
 					
@@ -455,6 +471,20 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		return uri;
 	}
 	
+	
+	private Model createFinalValueModel() {
+		Model finalModel = ModelFactory.createDefaultModel();
+		
+		StmtIterator iter = valueModel.listStatements();
+		while( iter.hasNext() ) {
+			Statement stmt = iter.next();
+			int sI = Integer.parseInt(stmt.getSubject().getURI());
+			Resource sR = finalModel.createResource(""+subIndexMap.get(sI));
+			finalModel.add(sR, stmt.getPredicate(), stmt.getObject());
+		}
+		return finalModel;
+	}
+	
 	private void writeSingleTarFile(File input) throws IOException {
 		 OutputStream fos = new BufferedOutputStream(new FileOutputStream(input.getAbsolutePath() + ".cp.bz2"));
          BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
@@ -573,7 +603,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 		    }// foreach rule
 		    // value model
 		    outputStream.write((FILE_SEP+"\n").getBytes());
-		    model.write(outputStream, "N3");
+		    Model finalValueModel = createFinalValueModel();
+		    finalValueModel.write(outputStream, "TURTLE");
 		    outputStream.close();
             fos.close();
 	}

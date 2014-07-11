@@ -28,10 +28,11 @@ public class Application{
 	
     public static void main(String[] args){
     	  if(System.getProperty("user.name").equalsIgnoreCase("lyko")) {
-  	    	File path = new File("resources/ubl_part/");
+  	    	File path = new File("resources/dummy_data2.nt");
 //  	    	path = new File("uba/lubm50/");
 //  	    	path = new File("resources/wordnet-membermeronym.rdf");
 //  	    	path = new File ("resources/archive_hub_dump.nt");
+  	    		path = new File("resources/ubl_part/");
   			if (path.exists()){
 //  			    CompressorFactory cf = new CompressorFactory();
   			    IndexBasedCompressor compressor = new IndexBasedCompressor();
