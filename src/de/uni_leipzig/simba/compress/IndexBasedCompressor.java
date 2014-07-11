@@ -22,6 +22,7 @@ import java.util.Map.Entry;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 
@@ -85,6 +86,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 //	HashMap<Integer, Integer> objIndexMap;
 	
 	IndexCompressedGraph dcg; Model model;
+	Model valueModel;
 	public IndexBasedCompressor() {
 		//nothing to do here so far.
 	}
@@ -98,6 +100,7 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			
 		 	long start = System.currentTimeMillis();
 		 	try {
+		 		valueModel = ModelFactory.createDefaultModel();
 		 		model = ModelLoader.getModel(input.getAbsolutePath());
 				shortToUri.putAll(model.getNsPrefixMap());
 				
@@ -111,48 +114,57 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				String print = "Loading model took: " + (middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds";
 				System.out.println(print);
 				writeLogFile(input, print, true);
-				
+				int valueStmtCount = 0;
 				int stmtCount = 0;
 				while( iter.hasNext() ){
 					Statement stmt = iter.next();
-					
-					String s = stmt.getSubject().toString();
-					try{
-						s = model.shortForm(s);
-					} catch(NullPointerException npe){ /*bnode*/ }
-					
-					String p = stmt.getPredicate().getURI();
-					try{
-						p = model.shortForm(p);
-					} catch(NullPointerException npe){ /*bnode*/ }
-					
-					String o = stmt.getObject().toString();
-					try{
-						o = model.shortForm(o);
-					} catch(NullPointerException npe){ /*bnode*/ }
-					
-	//				System.out.println(s + " -- " + p + " -- " + o);
-					int indexS = addIndex(s, SPO.SUBJECT);
-					int indexP = addIndex(p, SPO.PREDICATE);
-					int indexO = addIndex(o, SPO.OBJECT);
-					IndexProfile profile = new IndexProfile(indexP, indexO);
-					profile.addSubject(indexS);
-					IndexRule rule = new IndexRule(profile);
-					try{
-						dcg.addRule(rule, indexS);
-					}catch(Exception e) {
-						e.printStackTrace();
-						print = "Error adding rule!";
-						System.out.println(print);
-						writeLogFile(input, print, true);
+					if(stmt.getObject().isResource()) {
+						String s = stmt.getSubject().toString();
+						try{
+							s = model.shortForm(s);
+						} catch(NullPointerException npe){ /*bnode*/ }
+						
+						String p = stmt.getPredicate().getURI();
+						try{
+							p = model.shortForm(p);
+						} catch(NullPointerException npe){ /*bnode*/ }
+						
+						String o = stmt.getObject().toString();
+						try{
+							o = model.shortForm(o);
+						} catch(NullPointerException npe){ /*bnode*/ }
+						
+		//				System.out.println(s + " -- " + p + " -- " + o);
+						int indexS = addIndex(s, SPO.SUBJECT);
+						int indexP = addIndex(p, SPO.PREDICATE);
+						int indexO = addIndex(o, SPO.OBJECT);
+						IndexProfile profile = new IndexProfile(indexP, indexO);
+						profile.addSubject(indexS);
+						IndexRule rule = new IndexRule(profile);
+						try{
+							dcg.addRule(rule, indexS);
+						}catch(Exception e) {
+							e.printStackTrace();
+							print = "Error adding rule!";
+							System.out.println(print);
+							writeLogFile(input, print, true);
+						}
+						stmtCount++;
+					} else {
+						valueModel.add(stmt);
+						valueStmtCount++;
 					}
-					stmtCount++;
+					
 				}
 				
 				print = "Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 				System.out.println(print);
-	//			log += print +"\n";
 				writeLogFile(input, print, true);
+				
+				print = "#Rule statements="+stmtCount+" , #Value statement="+valueStmtCount;
+				System.out.println(print);
+				writeLogFile(input, print, true);
+				
 				middle = System.currentTimeMillis();
 				dcg.computeSuperRules();
 				print = "Computing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
@@ -322,19 +334,22 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				}				
 				break;
 			case OBJECT:
-//				if(objectMap.containsKey(uri)) {
-//					SubjectCount c = objectMap.get(uri);
-//					index = c.nr;
-//					c.count++;
-//							break;
-//				}	
-//				else { // create new one
-//					SubjectCount c = new SubjectCount(objectMap.size());
-//					index = c.nr;
-//					objectMap.put(uri, c);
-//					this.indexToObjectMap.put(index, uri);
-//				}
-				index = addIndex(uri, SPO.SUBJECT);
+				if(subjectMap.containsKey(uri)) {
+					SubjectCount c = subjectMap.get(uri);
+					c.isSubject = false;
+					index = c.nr;
+					c.count++;
+					if(c.count==2)
+						nrOfSingleSubs--;
+							break;
+				}	
+				else { // create new one
+					nrOfSingleSubs++;
+					SubjectCount c = new SubjectCount(subjectMap.size(), false);
+					index = c.nr;
+					subjectMap.put(uri, c);
+					this.indexToSubjectMap.put(index, uri);
+				}
 				break;
 		}
 		return index;
@@ -556,6 +571,9 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				
 				outputStream.write("\n".getBytes());
 		    }// foreach rule
+		    // value model
+		    outputStream.write((FILE_SEP+"\n").getBytes());
+		    model.write(outputStream, "N3");
 		    outputStream.close();
             fos.close();
 	}

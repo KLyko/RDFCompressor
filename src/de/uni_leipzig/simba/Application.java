@@ -28,14 +28,14 @@ public class Application{
 	
     public static void main(String[] args){
     	  if(System.getProperty("user.name").equalsIgnoreCase("lyko")) {
-  	    	File path = new File("resources/mbz_jamendo.rdf");
+  	    	File path = new File("resources/ubl_part/");
 //  	    	path = new File("uba/lubm50/");
 //  	    	path = new File("resources/wordnet-membermeronym.rdf");
 //  	    	path = new File ("resources/archive_hub_dump.nt");
   			if (path.exists()){
 //  			    CompressorFactory cf = new CompressorFactory();
   			    IndexBasedCompressor compressor = new IndexBasedCompressor();
-  			    compressor.setLogFileSuffix("bloomNT");
+  			    compressor.setLogFileSuffix("bloom");
   			    compressor.compress(path, -1);
   			}
   	    } else {
