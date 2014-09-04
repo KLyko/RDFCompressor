@@ -28,16 +28,16 @@ public class Application{
 	
     public static void main(String[] args){
     	  if(System.getProperty("user.name").equalsIgnoreCase("lyko")) {
-  	    	File path = new File("resources/dummy_data2.nt");
+  	    	File path = new File("resources/dummy_data3.nt");
 //  	    	path = new File("uba/lubm50/");
 //  	    	path = new File("resources/wordnet-membermeronym.rdf");
 //  	    	path = new File ("resources/archive_hub_dump.nt");
-  	    		path = new File("resources/ubl_part/");
+//  	    		path = new File("resources/ubl_part/");
   			if (path.exists()){
 //  			    CompressorFactory cf = new CompressorFactory();
-  			    IndexBasedCompressor compressor = new IndexBasedCompressor();
+  			    IndexBasedCompressor compressor = new IndexBasedCompressor(path, -1);
   			    compressor.setLogFileSuffix("bloom");
-  			    compressor.compress(path, -1);
+//  			    compressor.compress(path, -1);
   			}
   	    } else {
   	    	CommandLineParser parser = new BasicParser();
@@ -59,9 +59,10 @@ public class Application{
   				if(cmd.hasOption("del")) {
   					delete = Integer.parseInt(cmd.getOptionValue("del"));
   				}
+  				compressor.setFile(path);
+  				compressor.setDelete(delete);
   				
-  				
-  				compressor.compress(path, delete);
+  				compressor.compress();
   			} catch (ParseException e) {
   				// TODO Auto-generated catch block
   				e.printStackTrace();

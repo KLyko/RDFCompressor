@@ -7,7 +7,8 @@ public interface Compressor {
 	 * Input .nt file, JENA Graph, ...
 	 * Output bzipped  CompressedGraph
 	 */
-    public void compress(File input, int delete);
-    
+    public void compress();
+    public void setFile(File input);
+    public void setDelete(int delete);
     public void setLogFileSuffix(String prefix);
 }

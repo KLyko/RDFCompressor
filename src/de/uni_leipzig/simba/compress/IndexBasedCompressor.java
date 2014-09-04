@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Observable;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
@@ -40,7 +41,8 @@ import de.uni_leipzig.simba.io.ModelLoader;
  * @author Klaus Lyko
  *
  */
-public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInterface {
+public class IndexBasedCompressor extends Observable implements Compressor, IndexBasedCompressorInterface, Runnable
+{
 	public String logFileSuffix="";
 	int bloomErrorRate = 0;
 	
@@ -89,11 +91,27 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	
 	IndexCompressedGraph dcg; Model model;
 	Model valueModel;
-	public IndexBasedCompressor() {
-		//nothing to do here so far.
+	int delete;
+	File input;
+	
+	public IndexBasedCompressor(File input, int delete) {
+		this.input = input;
+		this.delete = delete;
 	}
 	
-	 public void compress(File input, int delete) {
+	public void setFile(File input){
+		this.input = input;
+	}
+	public void setDelete(int delete) {
+		this.delete = delete;
+	}
+	
+	public IndexBasedCompressor() {
+		this(null, 0);
+	}
+	
+	
+	 public void compress() {
 		 	log += input.getAbsolutePath()+"\n";
 		
 			long byteLength = input.length();
@@ -102,10 +120,19 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 			
 		 	long start = System.currentTimeMillis();
 		 	try {
+		 		setChanged();
+		 		notifyObservers("Loading Model...");
+//		 		this.notifyAll();
+//				this.wait();
 		 		valueModel = ModelFactory.createDefaultModel();
+		 
 		 		model = ModelLoader.getModel(input.getAbsolutePath());
+		 	
 				shortToUri.putAll(model.getNsPrefixMap());
-				
+				setChanged();
+		 		notifyObservers("Creating Rules...");
+//		 		this.notifyAll();
+//		 		this.wait();
 				// build inverse list of p/o tuples
 				dcg = new IndexCompressedGraph(model.size(), true, delete);
 				
@@ -182,6 +209,10 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				writeLogFile(input, print, true);
 				
 				middle = System.currentTimeMillis();
+				setChanged();
+		 		notifyObservers("Computing SuperRules...");
+//		 		this.notifyAll();
+//		 		this.wait();
 				dcg.computeSuperRules();
 				print = "Computing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 				System.out.println(print);
@@ -189,7 +220,12 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	//			log += print +"\n";
 	
 				middle = System.currentTimeMillis();
+				setChanged();
+		 		notifyObservers("Removing redundant Rules...");
+//		 		this.notifyAll();
+//		 		this.wait();
 				dcg.removeRedundantParentRules();
+				
 				print = "Removing redundancies: : " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 				System.out.println(print);
 				writeLogFile(input, print, true);				
@@ -197,6 +233,9 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				writeLogFile(input, dcg.log, true);
 				
 	//			log += print +"\n";
+				setChanged();
+		 		notifyObservers("Sorting Rules...");
+//		 		this.wait();
 				middle = System.currentTimeMillis();
 				subIndexMap = sortSubjectsFrequenceBased(subjectMap);
 //				objIndexMap = sortObjectsFrequenceBased(objectMap);
@@ -276,6 +315,8 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 				log += "\nExeption:"+e+" \n";
 				writeLogFile(input, "\nExeption:"+e+" \n", true);
 		 	}
+		 	setChanged();
+		 	notifyObservers("finished");
 		}
 
 	 
@@ -486,6 +527,15 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	}
 	
 	private void writeSingleTarFile(File input) throws IOException {
+		setChanged();
+ 		notifyObservers("Compress with BZip2...");
+// 		this.notifyAll();
+// 		try {
+//			this.wait();
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 		 OutputStream fos = new BufferedOutputStream(new FileOutputStream(input.getAbsolutePath() + ".cp.bz2"));
          BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
 		    //Prefixes
@@ -688,5 +738,10 @@ public class IndexBasedCompressor implements Compressor, IndexBasedCompressorInt
 	@Override
 	public void setLogFileSuffix(String suffix) {
 		this.logFileSuffix = "_"+suffix;
+	}
+
+	@Override
+	public void run() {
+		compress();
 	}
 }
