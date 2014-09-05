@@ -17,7 +17,8 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 		// TODO Auto-generated constructor stub
 	}
 
-	public void addRule(IndexRule r, Set<Integer> subs) throws Exception {
+	public void addRule(IndexRule r, Set<Integer> subs) {
+		r.nr = rules.size();
 		checkForSuperRules(r);
 		rules.add(r);		
 	}

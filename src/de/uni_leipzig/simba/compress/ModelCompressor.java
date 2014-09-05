@@ -18,6 +18,9 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 
+import de.uni_leipzig.simba.data.IndexProfile;
+import de.uni_leipzig.simba.data.IndexRule;
+import de.uni_leipzig.simba.data.InstantCompressedGraph;
 import de.uni_leipzig.simba.io.ModelLoader;
 
 /**
@@ -57,6 +60,9 @@ public class ModelCompressor extends IndexBasedCompressor implements Compressor,
 	@Override
 	public void compress() {
 		Model model = readModel();
+		valueModel = ModelFactory.createDefaultModel();
+		InstantCompressedGraph ruleGraph = new InstantCompressedGraph(model.size(), true, delete);
+		
 		/*Query all properties*/
  		String query = "SELECT DISTINCT ?p "+
  					"WHERE {" +
@@ -64,33 +70,38 @@ public class ModelCompressor extends IndexBasedCompressor implements Compressor,
  					"}";
  		QueryExecution qe = QueryExecutionFactory.create(query, model);
  		ResultSet rs = qe.execSelect();
- 		
+ 		int valueStmtCount = 0;//count statements where oi isn't a resource
  		while(rs.hasNext()) {
 			QuerySolution qs = rs.nextSolution();
 			Resource res_p = qs.getResource("?p");
-			Property p = model.getProperty(res_p.getURI());
+			Property p = model.getProperty(model.shortForm(res_p.getURI()));
 			int indexP = this.addIndex(p.getURI(), SPO.PREDICATE);
 			NodeIterator nodeIter = model.listObjectsOfProperty(p);
 			while(nodeIter.hasNext()) { //nest
 				RDFNode o_node=nodeIter.next();
-				String out = "";
 				if(o_node.isResource()) {
-					out+= res_p +" - "+o_node+" {";
-					int indexO = addIndex(o_node.asResource().getURI(), SPO.OBJECT); 
 					// we have an p - o pair
-					HashSet<Integer> subsOfPO = new HashSet<Integer>();
+					int indexO = addIndex(model.shortForm(o_node.asResource().getURI()), SPO.OBJECT); 
+					IndexProfile profile = new IndexProfile(indexP, indexO);
 					ResIterator subIter = model.listResourcesWithProperty(p, o_node);
 					while(subIter.hasNext()) {
 						Resource s = subIter.next();
-						subsOfPO.add(addIndex(s.getURI(), SPO.SUBJECT));
-						out+=s+", ";
-					}
-					out = out.substring(0,out.length()-2);
-					out+="}";
-					System.out.println(out);
-					
+						profile.addSubject(addIndex(model.shortForm(s.getURI()), SPO.SUBJECT));
+					}					
+					//creating and adding rule
+					IndexRule rule = new IndexRule(profile);
+					ruleGraph.addRule(rule, profile.getSubjects());
+					System.out.println("Added rule "+rule);					
 				} else { // o isn't a resource
-					//TODO implement
+					ResIterator subIter = model.listResourcesWithProperty(p, o_node);
+					while(subIter.hasNext()) {
+						Resource sIR = valueModel.createResource(""+addIndex(model.shortForm(subIter.next().getURI()), SPO.SUBJECT));
+						Property pIR = valueModel.createProperty(""+indexP);
+						valueModel.add(sIR, pIR, o_node);
+						valueStmtCount++;
+						System.out.println("new Value statement <"+sIR+"><"+pIR+">"+o_node);		
+					}
+					
 				}
 			}
 //			out = out.substring(0, out.length()-2);
@@ -113,6 +124,13 @@ public class ModelCompressor extends IndexBasedCompressor implements Compressor,
 	public void setLogFileSuffix(String prefix) {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	
+	public static void main(String args[]) {
+		File file = new File("resources/dummy_data3.nt");
+		ModelCompressor compr = new ModelCompressor(file);
+		compr.compress();
 	}
 
 }
