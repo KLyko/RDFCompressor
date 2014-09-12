@@ -6,7 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.Iterator;
@@ -43,8 +42,10 @@ import de.uni_leipzig.simba.io.ModelLoader;
  * 	1. querying the RDF model for all properties
  * 	2. get all objects which are RDF resources
  * 	3. for each of this p-o pair get all subjects
- * Threreby we can construct the complete rules at once and have only to inspect all rules already present
- * whether they are a sub or superrule. Thsi should limit the complexityof our algorithm. 
+ * Threreby, we can construct the complete rules at once:
+ * Don't have to check if a rule already exists. And also all rules are already sorted by property. 
+ * No empty, or redundant rules exist. Thereby, we can significantly limit the complexity.
+ * 
  * @author Klaus Lyko
  *
  */
@@ -400,6 +401,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 		    outputStream.close();
            fos.close();
 	}
+	
 	
 	private Model createFinalValueModel() {
 		Model finalModel = ModelFactory.createDefaultModel();

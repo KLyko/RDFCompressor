@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import org.apache.commons.compress.compressors.CompressorException;
+
 /**
  * 
  * Input bzipped  CompressedGraph
@@ -13,5 +15,5 @@ import java.io.IOException;
  */
 public interface DeCompressor {
 
-	public File decompress(File file) throws FileNotFoundException, IOException;
+	public File decompress(File file) throws FileNotFoundException, IOException, CompressorException;
 }

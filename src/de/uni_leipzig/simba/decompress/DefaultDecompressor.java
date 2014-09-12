@@ -1,10 +1,15 @@
 package de.uni_leipzig.simba.decompress;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,9 +17,20 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.compressors.CompressorInputStream;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
+
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
+
 import de.uni_leipzig.simba.compress.IndexBasedCompressor;
 import de.uni_leipzig.simba.data.IndexProfile;
 import de.uni_leipzig.simba.data.IndexRule;
+import de.uni_leipzig.simba.io.ModelLoader;
 
 public class DefaultDecompressor implements DeCompressor{
 	HashMap<Integer, String> subjects = new HashMap<Integer, String>();
@@ -24,10 +40,12 @@ public class DefaultDecompressor implements DeCompressor{
 	HashMap<Integer, IndexRule> ruleMap = new HashMap<Integer, IndexRule>();
 	
 	@Override
-	public File decompress(File file) throws IOException {
+	public File decompress(File file) throws IOException, CompressorException {
 //		InputStream in = new 
 //		
-		BufferedReader br = new BufferedReader(new FileReader(file));
+		BufferedWriter bw = new BufferedWriter(new FileWriter("tmp.n3", false));
+		BufferedReader br = getBufferedReaderForBZ2File(file.getAbsolutePath());
+		
 		String line;
 		int stage = 0;
 		int ruleNr = 0;
@@ -43,6 +61,7 @@ public class DefaultDecompressor implements DeCompressor{
 				 	case 1: parseSubjects(line);break;
 				 	case 2: parseProperties(line);break;
 				 	case 3: lastProp = parseRule(line, lastProp, ruleNr); ruleNr++;break;
+				 	case 4: bw.write(line); bw.newLine(); break;
 				 }
 			 }
 		 }
@@ -69,9 +88,27 @@ public class DefaultDecompressor implements DeCompressor{
 		System.out.println("\n\nNr of triples: "+triples.size());
 		
 		
+		/*############################################### VALUE MODEL  ####################################*/
+		System.out.println("Reading valueModel");
+		
+		bw.close();
+		
+		
+		Model valueModel = ModelFactory.createDefaultModel();
+		valueModel = ModelLoader.getModel("tmp.n3");
+		StmtIterator it = valueModel.listStatements();
+		while(it.hasNext()) {
+			Statement stmt = it.next();
+			String s = stmt.getSubject().getURI().substring(stmt.getSubject().getURI().lastIndexOf("/")+1);
+			String p = stmt.getPredicate().getURI().substring(stmt.getSubject().getURI().lastIndexOf("/")+1);
+			RDFNode o = stmt.getObject();
+			System.out.println("Read Stmt: "+subjects.get(Integer.parseInt(s))+" "+properties.get(Integer.parseInt(p))+" "+o);
+		}
+		
+		
 		return null;
 	}
-	
+
 	/**
 	 * 
 	 * @param ruleNr
@@ -218,6 +255,29 @@ public class DefaultDecompressor implements DeCompressor{
 		return propNr;		
 	}
 	
+	public static BufferedReader getBufferedReaderForBZ2File(String fileIn) throws FileNotFoundException, CompressorException {
+	    FileInputStream fin = new FileInputStream(fileIn);
+	    BufferedInputStream bis = new BufferedInputStream(fin);
+	    CompressorInputStream input = new CompressorStreamFactory().createCompressorInputStream("bzip2", bis);
+	    BufferedReader br2 = new BufferedReader(new InputStreamReader(input));
+
+	    return br2;
+	}
+	
+	
+	public static void main(String args[]) {
+		File file = new File("resources/dummy_data3.nt.cp.bz2");
+		DefaultDecompressor decmpr = new DefaultDecompressor();
+		try {
+			decmpr.decompress(file);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CompressorException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	
 
 }
