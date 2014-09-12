@@ -301,6 +301,8 @@ public class DefaultDecompressor implements DeCompressor{
 			StmtIterator it = glob.listStatements();
 			while(it.hasNext()) {
 				Statement stmt = it.next();
+//				System.out.println(stmt);
+				System.out.println(stmt.getSubject().getLocalName() + " " + stmt.getPredicate()+" " +stmt.getObject());
 			}
 			
 		} catch (IOException e) {
