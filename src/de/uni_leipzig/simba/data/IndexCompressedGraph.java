@@ -110,41 +110,22 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 	}
 	
 
-	public Set<IndexRule> getSuperRules(IndexRule r) {
+	public Set<IndexRule> getSuperRules(IndexRule r, int nr) {
 		HashSet<IndexRule> result = new HashSet<IndexRule>();
-		// Collections.sort(rules);
-		for(IndexRule o : rules) {
-//			System.out.println("\tComparing "+r.getProfile().subjects+" with "+o.getProfile().subjects);
-
-//			IndexRule o = e.getValue();
-			if(o.profile.size()<r.profile.size())
-				continue;
-			if(r.profile.subjects.isEmpty())
-				continue;
-			else {// other has almost as many elements
-				if(!r.profile.equals(o.profile)) {// isn't the same
-//					System.out.println("\t pofiles doesn't equal");
-//				    if(!r.profile.subjects.isEmpty() ) // isn't empty
-//						System.out.println("\t r: "+r.profile.debugOutPut()+" o: "+o.profile.debugOutPut());
-						if(r.profile.min>=o.profile.min && // check uri ranges
-							r.profile.max<=o.profile.max) {
-//							System.out.println("\t min max okay");
-							if(!o.parents.contains(r))  {// avoid double linking to parent
-//								System.out.println("\t o doesn't contain r");
-								if(o.profile.containsAll(r.profile)) // other contains all uris of r
-								{
-										result.add(o);
-										if(o.isSuperRulesComputed()) {
-											result.addAll((Collection<? extends IndexRule>) o.parents);
-//											System.out.println("\tAvoid further computation");
-											return result;
-										}
-								}
-							}
+		for(int i = nr+1; i<rules.size(); i++) {
+			IndexRule o = rules.get(i);
+			if(r.profile.min>=o.profile.min && // check uri ranges
+					r.profile.max<=o.profile.max) {
+				if(!o.parents.contains(r))  {// avoid double linking to parent
+					if(o.profile.containsAll(r.profile)) { // other contains all uris of r
+						result.add(o);
+						if(o.isSuperRulesComputed()) {
+							result.addAll((Collection<? extends IndexRule>) o.parents);
+							return result;
 						}
-				}
-			}
-		}
+					}
+				}						}
+		}		
 		return result;
 	}
 
@@ -174,10 +155,11 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 		if(this.deleteBorder < 0) {
 	    	if(rules.size()<500) {
 	    		println += " with subject-set based approach.";
-	    		for(IndexRule r : rules) { //O(n²)
+	    		for(int i = 0; i<rules.size(); i++) { //O(n²)
+	    			IndexRule r = rules.get(i);
 	    			if(r.getProfile().subjects.size()>1) {
 	//    			System.out.println("Computing super rules of "+r);
-	    				Set<IndexRule> supersets = getSuperRules(r);
+	    				Set<IndexRule> supersets = getSuperRules(r, i);
 //	    				HashMap<Integer, RuleToDeleteGraph> deleteRules = computeDeleteBasedRules(r);
 //	    				System.out.println("delete Rules for "+r+":");
 //	    				for(Entry<Integer, RuleToDeleteGraph> e : deleteRules.entrySet()) {
@@ -359,7 +341,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
      * @param rule
      * @param subject
      */
-    private void  addSubjectToRuleEntry(IndexRule rule, Integer subject) {
+    protected void  addSubjectToRuleEntry(IndexRule rule, Integer subject) {
     	if(subjectToRule.containsKey(subject)) {
     		subjectToRule.get(subject).add(rule);
     	} else {
@@ -374,7 +356,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
      * @param r
      * @return
      */
-    private Set<IndexRule> computeFeasibleSuperRules(IndexRule r) {
+    protected Set<IndexRule> computeFeasibleSuperRules(IndexRule r) {
     	HashSet<IndexRule> rules = new HashSet<>();
     	Set<Integer> subs = r.profile.subjects;
     	if(subs.isEmpty())

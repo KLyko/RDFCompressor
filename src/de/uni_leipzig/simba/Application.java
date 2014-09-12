@@ -35,11 +35,11 @@ public class Application{
 //  	    	path = new File("resources/wordnet-membermeronym.rdf");
 //  	    	path = new File ("resources/archive_hub_dump.nt");
 //  	    		path = new File("resources/ubl_part/");
-  	    	path = new File("C:\\Users\\Lyko\\Downloads\\jamendo-rdf\\jamendo.rdf");
+//  	    	path = new File("C:\\Users\\Lyko\\Downloads\\jamendo-rdf\\jamendo.rdf");
   			if (path.exists()){
 //  			    CompressorFactory cf = new CompressorFactory();
   				ModelCompressor compressor = new ModelCompressor(path);
-  			    compressor.setLogFileSuffix("bloom");
+//  			    compressor.setLogFileSuffix("bloom");
   			    compressor.compress();
   			}
   	    } else {

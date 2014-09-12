@@ -128,25 +128,45 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 			Resource res_p = qs.getResource("?p");
 			Property p = model.getProperty(res_p.getURI());
 //			System.out.println("Parsing Resource "+res_p+" to Property "+p);
-			int indexP = this.addIndex(model.shortForm(p.getURI()), SPO.PREDICATE);
+			String uri = p.getURI();
+			try{uri = model.shortForm(uri);}catch(Exception e){
+				System.err.println("Could not find model.shortForm of "+uri);
+				e.printStackTrace();
+			}
+			int indexP = this.addIndex(uri, SPO.PREDICATE);
 			NodeIterator nodeIter = model.listObjectsOfProperty(p);
 			while(nodeIter.hasNext()) { //nest
 				RDFNode o_node=nodeIter.next();
 				if(o_node.isResource()) {
 					// we have an p - o pair
 					objByProp++;
-					int indexO = addIndex(model.shortForm(o_node.asResource().getURI()), SPO.OBJECT); 
+					uri = o_node.asResource().getURI();
+					try{uri = model.shortForm(uri);}catch(Exception e){
+						System.err.println("Could not find model.shortForm of "+uri);
+						e.printStackTrace();
+					}
+					int indexO = addIndex(uri, SPO.OBJECT); 
 					IndexProfile profile = new IndexProfile(indexP, indexO);
 					ResIterator subIter = model.listResourcesWithProperty(p, o_node);
 					while(subIter.hasNext()) {
 						stmtCount++; stmtCountByProperty++;
 						Resource s = subIter.next();
-						profile.addSubject(addIndex(model.shortForm(s.getURI()), SPO.SUBJECT));
+						uri = s.getURI();
+						try{uri = model.shortForm(uri);}catch(Exception e){
+							System.err.println("Could not find model.shortForm of "+uri);
+							e.printStackTrace();
+						}
+						profile.addSubject(addIndex(uri, SPO.SUBJECT));
 					}					
 					//creating and adding rule
 					long startRuleAdd = System.currentTimeMillis();
 					IndexRule rule = new IndexRule(profile);
-					ruleGraph.addRule(rule, profile.getSubjects());
+					try {
+						ruleGraph.addRule(rule, profile.getSubjects());
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					durationRuleAdding += (System.currentTimeMillis()-startRuleAdd);
 //					System.out.println("Added rule "+rule);					
 				} else { // o isn't a resource
@@ -154,7 +174,14 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 					ResIterator subIter = model.listResourcesWithProperty(p, o_node);
 					while(subIter.hasNext()) {
 						long startValueAdd = System.currentTimeMillis();
-						Resource sIR = valueModel.createResource(""+addIndex(model.shortForm(subIter.next().getURI()), SPO.SUBJECT));
+						uri = subIter.next().getURI();
+						try {
+							uri = model.shortForm(uri);
+						} catch(Exception e) {
+							System.err.println("Could not find model.shortForm of "+uri);
+							e.printStackTrace();
+						}
+						Resource sIR = valueModel.createResource(""+addIndex(uri, SPO.SUBJECT));
 						Property pIR = valueModel.createProperty(""+indexP);
 						valueModel.add(sIR, pIR, o_node);
 						valueModelCreation += (System.currentTimeMillis()-startValueAdd);
@@ -169,14 +196,22 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 //			System.out.println(out);
 		}//for all properties
  		long timeRules = (System.currentTimeMillis()-middle);
- 		print = "Created all rules and computed Super rules " + timeRules + " milli seconds = " + timeRules/1000 +" seconds\n";
- 		print += "% Rule Adding = "+((sumRuleCreation/timeRules)*100)+", %ValueModelCreation="+((sumValueModelCreation/timeRules)*100);
+ 		print = "Created all rules" + timeRules + " milli seconds = " + timeRules/1000 +" seconds\n";
+// 		print += "% Rule Adding = "+((sumRuleCreation/timeRules)*100)+", %ValueModelCreation="+((sumValueModelCreation/timeRules)*100);
 		System.out.println(print);
 		writeLogFile(input, print, true);
-		setChanged();
- 		notifyObservers("Created rules and computed super rules. Removing redundancies...");
  		middle=System.currentTimeMillis();
- 		
+ 		/*############## compute super rules once ###########################################*/
+//		middle = System.currentTimeMillis();
+		setChanged();
+ 		notifyObservers("Created all Rules. Computing SuperRules...");
+// 		this.notifyAll();
+// 		this.wait();
+ 		ruleGraph.computeAllSuperRulesOnce();
+		print = "Computing super rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
+		System.out.println(print);
+		writeLogFile(input, print, true);
+ 		middle = System.currentTimeMillis();
  		/*############## remove redundancies ################################################*/
  		ruleGraph.removeRedundantParentRules();
  		print = "Removed redundancies in: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
@@ -184,7 +219,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 		writeLogFile(input, print, true);				
 		setChanged();
  		notifyObservers(print+" Sorting subject indices by frequence...");
- 		
+ 		middle =System.currentTimeMillis();
  		/*############## reorganize: sort subjects per frequence ############################*/
  		subIndexMap = sortSubjectsFrequenceBased(subjectMap);
  		long end = System.currentTimeMillis();
@@ -193,7 +228,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 		writeLogFile(input, print, true);
 		setChanged();
  		notifyObservers(print+" start writing tar file...");
- 		
+ 		middle = System.currentTimeMillis();
  		/*############## writing tar file ############################*/
  		try{
 			writeSingleTarFile(input, ruleGraph);			   
