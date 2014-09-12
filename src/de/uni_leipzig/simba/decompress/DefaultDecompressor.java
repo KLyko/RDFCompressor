@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -174,6 +175,8 @@ public class DefaultDecompressor implements DeCompressor{
 	
 	private void parseAbbreviations(String line) {
 		System.out.println("parse Abbr"+line);
+		String abr[] = line.split("\\|");
+		globalModel.setNsPrefix(abr[0], abr[1]);
 	}
 	
 	private void parseSubjects(String line) {
@@ -287,15 +290,17 @@ public class DefaultDecompressor implements DeCompressor{
 	
 	
 	public static void main(String args[]) {
-		File file = new File("resources/dummy_data3.nt.cp.bz2");
+		File file = new File("resources/n3.n3.cp.bz2");
 		DefaultDecompressor decmpr = new DefaultDecompressor();
 		try {
 			Model glob = decmpr.decompress(file);
+			Map<String,String> map = glob.getNsPrefixMap();
+			for(Entry e : map.entrySet())
+				System.out.println("@prefix "+ e.getKey()+" "+"<"+e.getValue()+">");
 			System.out.println("---"+glob.size());
 			StmtIterator it = glob.listStatements();
 			while(it.hasNext()) {
 				Statement stmt = it.next();
-				System.out.println(stmt);
 			}
 			
 		} catch (IOException e) {

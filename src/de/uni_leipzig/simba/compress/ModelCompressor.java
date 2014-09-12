@@ -424,7 +424,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 	
 	
 	public static void main(String args[]) {
-		File file = new File("resources/dummy_data3.nt");
+		File file = new File("resources/n3.n3");
 		ModelCompressor compr = new ModelCompressor(file);
 		compr.setLogFileSuffix("combined");
 		compr.compress();
