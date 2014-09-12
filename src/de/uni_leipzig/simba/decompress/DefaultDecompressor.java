@@ -23,7 +23,9 @@ import org.apache.commons.compress.compressors.CompressorStreamFactory;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 
@@ -39,10 +41,13 @@ public class DefaultDecompressor implements DeCompressor{
 	
 	HashMap<Integer, IndexRule> ruleMap = new HashMap<Integer, IndexRule>();
 	
+
+	Model globalModel = ModelFactory.createDefaultModel();
+	
 	@Override
-	public File decompress(File file) throws IOException, CompressorException {
-//		InputStream in = new 
-//		
+	public Model decompress(File file) throws IOException, CompressorException {
+
+		
 		BufferedWriter bw = new BufferedWriter(new FileWriter("tmp.n3", false));
 		BufferedReader br = getBufferedReaderForBZ2File(file.getAbsolutePath());
 		
@@ -66,22 +71,24 @@ public class DefaultDecompressor implements DeCompressor{
 			 }
 		 }
 		 // structure loaded
-		 for(Entry<Integer, IndexRule> e: ruleMap.entrySet()) {
-			System.out.println(e.getKey()+": "+e.getValue()+" "+e.getValue().getParentIndices());
-		 }
-		 
+//		 for(Entry<Integer, IndexRule> e: ruleMap.entrySet()) {
+//			System.out.println(e.getKey()+": "+e.getValue()+" "+e.getValue().getParentIndices());
+//		 }
+//		 
 		 ArrayList<String> triples = new ArrayList<String>(22);
 		 
 		 
 		 for(Integer rNr : ruleMap.keySet()) {
 		
 			 Set<String> nts = buildNTriples(rNr, new HashSet<Integer>());
-			 System.out.println("Building rule nr "+rNr+": "+nts);
+//			 System.out.println("Building rule nr "+rNr+": "+nts);
 			
 			 triples.addAll(nts);
 		 }
 		 Collections.sort(triples);
 		 for(String s : triples) {
+//			 String tr = s.
+//			 globalModel.createStatement(globalModel.getResource(uri), p, o)
 			 System.out.println(s);
 		 }
 		
@@ -102,11 +109,15 @@ public class DefaultDecompressor implements DeCompressor{
 			String s = stmt.getSubject().getURI().substring(stmt.getSubject().getURI().lastIndexOf("/")+1);
 			String p = stmt.getPredicate().getURI().substring(stmt.getSubject().getURI().lastIndexOf("/")+1);
 			RDFNode o = stmt.getObject();
-			System.out.println("Read Stmt: "+subjects.get(Integer.parseInt(s))+" "+properties.get(Integer.parseInt(p))+" "+o);
+			Resource subj = globalModel.getResource(subjects.get(Integer.parseInt(s)));
+			Property prop = globalModel.getProperty(properties.get(Integer.parseInt(p)));
+			Statement statement = globalModel.createLiteralStatement(subj, prop, o.asLiteral());
+			globalModel.add(statement);
+//			System.out.println("Read Stmt: " + subj+ " " + prop +" "+o);
 		}
 		
 		
-		return null;
+		return globalModel;
 	}
 
 	/**
@@ -125,6 +136,10 @@ public class DefaultDecompressor implements DeCompressor{
 				String triple = subjects.get(sID) + " " 
 						+ properties.get(r.getProfile().getProperty()) + " "
 						+ subjects.get(r.getProfile().getObject()) +" .";
+				Statement statement = globalModel.createStatement(globalModel.getResource(subjects.get(sID)),
+						globalModel.getProperty(properties.get(r.getProfile().getProperty())),
+						globalModel.getResource(subjects.get(r.getProfile().getObject())));
+				globalModel.add(statement);
 				triples.add(triple);
 			}
 			for(Integer parentID : r.getParentIndices()) { //recursion
@@ -136,6 +151,10 @@ public class DefaultDecompressor implements DeCompressor{
 					String triple = subjects.get(sID) + " " 
 							+ properties.get(r.getProfile().getProperty()) + " "
 							+ subjects.get(r.getProfile().getObject()) +" .";
+					Statement statement = globalModel.createStatement(globalModel.getResource(subjects.get(sID)),
+							globalModel.getProperty(properties.get(r.getProfile().getProperty())),
+							globalModel.getResource(subjects.get(r.getProfile().getObject())));
+					globalModel.add(statement);
 					triples.add(triple);
 				}
 			}
@@ -162,6 +181,7 @@ public class DefaultDecompressor implements DeCompressor{
 //		System.out.println(parts[1]+"=>"+parts[0]);
 //		subjects.put(Integer.parseInt(parts[1]), parts[0]);
 		subjects.put(subjects.size(), line);
+		globalModel.createResource(line);
 	}
 	
 	private void parseProperties(String line) {
@@ -169,6 +189,7 @@ public class DefaultDecompressor implements DeCompressor{
 //		System.out.println(parts[1]+"=>"+parts[0]);
 //		properties.put(Integer.parseInt(parts[1]), parts[0]);
 		properties.put(properties.size(), line);
+		globalModel.createProperty(line);
 	}
 	
 	private int parseRule (String line, int prop_before, int ruleNr) {
@@ -269,7 +290,14 @@ public class DefaultDecompressor implements DeCompressor{
 		File file = new File("resources/dummy_data3.nt.cp.bz2");
 		DefaultDecompressor decmpr = new DefaultDecompressor();
 		try {
-			decmpr.decompress(file);
+			Model glob = decmpr.decompress(file);
+			System.out.println("---"+glob.size());
+			StmtIterator it = glob.listStatements();
+			while(it.hasNext()) {
+				Statement stmt = it.next();
+				System.out.println(stmt);
+			}
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -82,6 +82,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 	/*############## Reading Model, creating all rules ################################################*/
 		long start = System.currentTimeMillis();
 		model = readModel();
+		
 		valueModel = ModelFactory.createDefaultModel();
 		InstantCompressedGraph ruleGraph = new InstantCompressedGraph(model.size(), true, delete);
 		shortToUri.putAll(model.getNsPrefixMap());

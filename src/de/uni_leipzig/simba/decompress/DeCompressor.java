@@ -6,6 +6,8 @@ import java.io.IOException;
 
 import org.apache.commons.compress.compressors.CompressorException;
 
+import com.hp.hpl.jena.rdf.model.Model;
+
 /**
  * 
  * Input bzipped  CompressedGraph
@@ -15,5 +17,5 @@ import org.apache.commons.compress.compressors.CompressorException;
  */
 public interface DeCompressor {
 
-	public File decompress(File file) throws FileNotFoundException, IOException, CompressorException;
+	public Model decompress(File file) throws FileNotFoundException, IOException, CompressorException;
 }
