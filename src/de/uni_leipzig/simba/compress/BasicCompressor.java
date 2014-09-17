@@ -26,6 +26,8 @@ import de.uni_leipzig.simba.data.IndexCompressedGraph;
 import de.uni_leipzig.simba.data.IndexProfile;
 import de.uni_leipzig.simba.data.IndexRule;
 import de.uni_leipzig.simba.data.SubjectCount;
+import de.uni_leipzig.simba.io.ObserverFeedback;
+import de.uni_leipzig.simba.io.Status;
 
 public class BasicCompressor extends Observable implements IndexBasedCompressorInterface {
 	public String logFileSuffix="";
@@ -83,6 +85,8 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 	
 
 	public BasicCompressor(File input, int delete) {
+		feedback = new ObserverFeedback();
+ 		feedback.currentStatus = status;
 		this.input = input;
 		this.delete = delete;
 	}
@@ -370,5 +374,7 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 	}	
 	
 /*##########################Observer constants##############################################*/
-	
+//	public static String
+	public Status status = new Status("Begin compression", 0, 6);
+	public ObserverFeedback feedback = new ObserverFeedback();
 }

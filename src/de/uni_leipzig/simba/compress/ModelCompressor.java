@@ -35,6 +35,7 @@ import de.uni_leipzig.simba.data.IndexProfile;
 import de.uni_leipzig.simba.data.IndexRule;
 import de.uni_leipzig.simba.data.InstantCompressedGraph;
 import de.uni_leipzig.simba.io.ModelLoader;
+import de.uni_leipzig.simba.io.ObserverFeedback;
 
 /**
  * Class to create compressed graph (rules, their super rules) while iterating the model.
@@ -71,11 +72,14 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 
 	@Override
 	public void compress() {
+		
 		log = "--> Combined creating rules and computing super rules\n";
 		log += input.getAbsolutePath()+"\n";
 		long byteLength = input.length();
 		log+= "Length in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB\n\n";
-		
+
+ 		status.update("Lodaded Jena Model", "Reading Model and building Rules...");
+// 		feedback.timePassed
 		setChanged();
  		notifyObservers("Loaded Model");
 		writeLogFile(input, log, false);
@@ -131,8 +135,9 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 			Property p = model.getProperty(res_p.getURI());
 //			System.out.println("Parsing Resource "+res_p+" to Property "+p);
 			String uri = p.getURI();
+//			String suri = uri;
 			try{uri = model.shortForm(uri);}catch(Exception e){
-				System.err.println("Could not find model.shortForm of "+uri);
+				System.err.println("Could not find model.shortForm of property "+p+" uri: "+uri);
 				e.printStackTrace();
 			}
 			int indexP = this.addIndex(uri, SPO.PREDICATE);
@@ -142,21 +147,28 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 				if(o_node.isResource()) {
 					// we have an p - o pair
 					objByProp++;
-					uri = o_node.asResource().getURI();
-					try{uri = model.shortForm(uri);}catch(Exception e){
-						System.err.println("Could not find model.shortForm of "+uri);
-						e.printStackTrace();
+					Resource o_res = o_node.asResource();
+					if(o_res.isURIResource()) {
+						uri = o_node.asResource().getURI();
+						uri = model.shortForm(uri);
+					}// o_node is resource and has URI
+					else {
+						uri = o_node.asResource().getId().toString();
+						System.out.println("Created AnonID: "+uri);						
 					}
+					
 					int indexO = addIndex(uri, SPO.OBJECT); 
 					IndexProfile profile = new IndexProfile(indexP, indexO);
 					ResIterator subIter = model.listResourcesWithProperty(p, o_node);
 					while(subIter.hasNext()) {
 						stmtCount++; stmtCountByProperty++;
 						Resource s = subIter.next();
-						uri = s.getURI();
-						try{uri = model.shortForm(uri);}catch(Exception e){
-							System.err.println("Could not find model.shortForm of "+uri);
-							e.printStackTrace();
+						if(s.isURIResource()) {
+							uri = s.getURI();
+							uri = model.shortForm(uri);
+						} else {
+							uri = s.getId().toString();
+							System.out.println("Created AnonID for s: "+uri);
 						}
 						profile.addSubject(addIndex(uri, SPO.SUBJECT));
 					}					
@@ -176,13 +188,15 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 					ResIterator subIter = model.listResourcesWithProperty(p, o_node);
 					while(subIter.hasNext()) {
 						long startValueAdd = System.currentTimeMillis();
-						uri = subIter.next().getURI();
-						try {
+						Resource r = subIter.next();
+						if(r.isURIResource()) {
+							uri = r.getURI();
 							uri = model.shortForm(uri);
-						} catch(Exception e) {
-							System.err.println("Could not find model.shortForm of "+uri);
-							e.printStackTrace();
+						} else {
+							uri = r.getId().toString();
+							System.out.println("Created AnonID for s_val: "+uri);
 						}
+						
 						Resource sIR = valueModel.createResource(""+addIndex(uri, SPO.SUBJECT));
 						Property pIR = valueModel.createProperty(""+indexP);
 						valueModel.add(sIR, pIR, o_node);

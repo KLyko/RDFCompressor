@@ -1,24 +1,18 @@
 package de.uni_leipzig.simba.compress;
 
-import java.io.BufferedInputStream;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Observable;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
@@ -33,7 +27,6 @@ import de.uni_leipzig.simba.data.IRule;
 import de.uni_leipzig.simba.data.IndexCompressedGraph;
 import de.uni_leipzig.simba.data.IndexProfile;
 import de.uni_leipzig.simba.data.IndexRule;
-import de.uni_leipzig.simba.data.SubjectCount;
 import de.uni_leipzig.simba.io.ModelLoader;
 /**
  * Implementation of an index based compression:

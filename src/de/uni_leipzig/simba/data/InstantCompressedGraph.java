@@ -1,15 +1,14 @@
 package de.uni_leipzig.simba.data;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.Map.Entry;
 
 /**
- * Compressedgraph holding and managing all rules. If a new Rule is added a check for possible
- * super rules is done over all present rules.
+ * Compressedgraph holding and managing all rules. As rules are supposed to be added complete (with all subjects)
+ * A lot of redundancy checks are not neccessary, as they are added. Also computing all super rules is
+ * easier as they are already ordered by their property ({@link ModelCompressor)
  * @author Klaus Lyko
  *
  */
@@ -19,7 +18,6 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 	public InstantCompressedGraph(double expRules, boolean useBloom,
 			int deleteBorder) {
 		super(expRules, useBloom, deleteBorder);
-		// TODO Auto-generated constructor stub
 	}
 
 	public void addRule(IndexRule r, Set<Integer> subs) throws Exception {
@@ -27,14 +25,11 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 			HashMap<Integer, IndexRule> subMap = new HashMap<Integer, IndexRule>();
 			subMap.put(r.profile.obj, r);
 			ruleMap.put(r.profile.prop, subMap);
-//			logger.info("Add new rule "+r+" ");
 			for(Integer subject:subs)
 				addSubjectToRuleEntry(r, subject);
 		} else { // property does exist				
 			IndexRule o = ruleMap.get(r.profile.prop).get(r.profile.obj);
 			if(o == null) { // false positive check
-//				logger.error("False positive on bloom filer");
-//				bloom.add(r.profile.prop+"-"+r.profile.obj);
 				ruleMap.get(r.profile.prop).put(r.profile.obj, r);
 				for(Integer subject:subs)
 					addSubjectToRuleEntry(r, subject);
@@ -47,12 +42,10 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 					o.profile.addSubject(sub);
 					addSubjectToRuleEntry(o, sub);
 				}
-
 			}
 		}
 			
 		r.nr = rules.size();
-//		computeSuperRules(r);
 		rules.add(r);		
 	}
 	
@@ -64,7 +57,7 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 				// r is a possible super rule
 				if(r.profile.min <= o.profile.min)
 					if(r.profile.max >= o.profile.max)
-//						if(!o.parents.contains(r)) // neccesary, even possible?
+//						if(!o.parents.contains(r)) // not neccesary, should not be possible
 							if(r.profile.subjects.containsAll(o.profile.subjects)) {
 								System.out.println("Found children: "+o+"  < "+r);
 								o.parents.add(r);
@@ -86,7 +79,7 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 	
 	public void computeAllSuperRulesOnce() {
 		long start = System.currentTimeMillis();
-		Collections.sort(rules); // O(n*log n)
+		Collections.sort(rules); // O(n*log n). Order by size
 		long end = System.currentTimeMillis();
 		
     	log+="\n\tSorting rules by size:"+(end-start)+" ms = "+((end-start)/1000)+" s";
@@ -94,9 +87,9 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 		
 		
 		//1st compute all supersets
-		String  println = "\n\tComputing super rules ";
+		String  println = "\n\tComputing super rules by iterating over all rules ";
 //		if(this.deleteBorder <= 0) {
-	    	if(rules.size()<0) {
+	    	if(rules.size()<500) { // if we only have some rules use normal approach: iterate over all other rules.
 	    		println += " with subject-set based approach.";
 	    		for(int i = 0; i<rules.size(); i++) { //O(n²)
 	    			IndexRule r = rules.get(i);
@@ -106,8 +99,8 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 						r.setSuperRulesComputed(true);
 	    			}
 	    		}
-	    	} else {
-	    		println += " with subject to Rules map.";
+	    	} else { // many rules use
+	    		println = "Computing super rules by with subject to Rules map.";
 	    		for(IndexRule r : rules) { 
 	    			if(r.getProfile().subjects.size()>1) {
 		    			Set<IndexRule> parents = computeFeasibleSuperRules(r);

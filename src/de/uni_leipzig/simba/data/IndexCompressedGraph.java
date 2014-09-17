@@ -112,20 +112,21 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
 
 	public Set<IndexRule> getSuperRules(IndexRule r, int nr) {
 		HashSet<IndexRule> result = new HashSet<IndexRule>();
-		for(int i = nr+1; i<rules.size(); i++) {
+		for(int i = nr+1; i<rules.size(); i++) { // as rules are supposed to be sorted by size we only have to check larger ones
 			IndexRule o = rules.get(i);
 			if(r.profile.min>=o.profile.min && // check uri ranges
 					r.profile.max<=o.profile.max) {
 				if(!o.parents.contains(r))  {// avoid double linking to parent
 					if(o.profile.containsAll(r.profile)) { // other contains all uris of r
 						result.add(o);
-						if(o.isSuperRulesComputed()) {
+						if(o.isSuperRulesComputed()) { // should not happen
 							result.addAll((Collection<? extends IndexRule>) o.parents);
 							return result;
 						}
 					}
-				}						}
-		}		
+				}						
+			}
+		} // end for		
 		return result;
 	}
 
@@ -352,38 +353,36 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     }
     
     /**
-     * Method to compute SuperRuöes
+     * Method to compute SuperRules based upon their subjects: Iterate over all subjects of this rule and
+     * compute intersection of all rules they're part of. Is suposed to be more effient if number of rules is
+     * quite large.
      * @param r
      * @return
      */
     protected Set<IndexRule> computeFeasibleSuperRules(IndexRule r) {
     	HashSet<IndexRule> rules = new HashSet<>();
     	Set<Integer> subs = r.profile.subjects;
-    	if(subs.isEmpty())
+    	if(subs.isEmpty()) // though this should never happen
     		return rules;
-    	// non empty subs
     	Iterator<Integer> it = subs.iterator();
     	HashSet<IndexRule> returnSet = new HashSet<>();
     	rules.addAll(subjectToRule.get(it.next())); // init
+    	rules.remove(r); // avoid transitivity
     	returnSet.addAll(rules); // need intermediate Set.  
     	while(it.hasNext() && !rules.isEmpty()) {
     		Set<IndexRule> others = subjectToRule.get(it.next());
-    		for(IndexRule ri : rules) {
-    			if(!others.contains(ri))
-    				returnSet.remove(ri);
+    		for(IndexRule ri : rules) { // for each still possible super rules sr
+    			if(!others.contains(ri)) // if this subjects is no part of sr
+    				returnSet.remove(ri); // delete sr of set of super rules
     		}
-    		rules.clear();
-    		rules.addAll(returnSet);
-//    		rules = returnSet;
+    		rules.clear(); 
+    		rules.addAll(returnSet); // set rules to the still possible ones
     	}
-//    	System.out.println("\t org" + returnSet);
-    	returnSet.remove(r); // avoid transitivity
-//    	System.out.println("\t red" + returnSet);
     	return returnSet;
     }
     
     /**
-     * Compute rules that are
+     * Compute super rules that are can contain delete entries
      * @param r
      * @return
      */
