@@ -134,11 +134,13 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 			Resource res_p = qs.getResource("?p");
 			Property p = model.getProperty(res_p.getURI());
 //			System.out.println("Parsing Resource "+res_p+" to Property "+p);
-			String uri = p.getURI();
-//			String suri = uri;
-			try{uri = model.shortForm(uri);}catch(Exception e){
-				System.err.println("Could not find model.shortForm of property "+p+" uri: "+uri);
-				e.printStackTrace();
+			String uri = "";
+			if(p.isURIResource()) {
+				uri= p.getURI();
+				uri = model.shortForm(uri);
+			}else {
+				uri = p.getId().toString();
+				System.out.println("Created anon property id "+uri+" anon: "+p.getId().getLabelString());
 			}
 			int indexP = this.addIndex(uri, SPO.PREDICATE);
 			NodeIterator nodeIter = model.listObjectsOfProperty(p);
@@ -153,8 +155,8 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 						uri = model.shortForm(uri);
 					}// o_node is resource and has URI
 					else {
-						uri = o_node.asResource().getId().toString();
-						System.out.println("Created AnonID: "+uri);						
+						uri = o_res.getId().toString();
+						System.out.println("Created obj AnonID: "+uri+" anon.label: "+o_res.getId().getLabelString());						
 					}
 					
 					int indexO = addIndex(uri, SPO.OBJECT); 
@@ -168,7 +170,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 							uri = model.shortForm(uri);
 						} else {
 							uri = s.getId().toString();
-							System.out.println("Created AnonID for s: "+uri);
+							System.out.println("Created AnonID for s: "+uri+" anon.label: "+s.getId().getLabelString());
 						}
 						profile.addSubject(addIndex(uri, SPO.SUBJECT));
 					}					
@@ -194,7 +196,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 							uri = model.shortForm(uri);
 						} else {
 							uri = r.getId().toString();
-							System.out.println("Created AnonID for s_val: "+uri);
+							System.out.println("Created AnonID for s_val: "+uri+" anon.label: "+r.getId().getLabelString());
 						}
 						
 						Resource sIR = valueModel.createResource(""+addIndex(uri, SPO.SUBJECT));
