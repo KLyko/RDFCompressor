@@ -32,7 +32,7 @@ import de.uni_leipzig.simba.io.Status;
 public class BasicCompressor extends Observable implements IndexBasedCompressorInterface {
 	public String logFileSuffix="";
 	int bloomErrorRate = 0;
-	
+	boolean showDebug = true;
 	/**Used to separate elements in Lists (Subjects, Superrules)*/
 	public static final String LIST_SEP = "|";
 	/**Used to separate property and object index*/
@@ -58,6 +58,8 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 			"--> sort uris frequence based\n" +
 			"--> additional value model: use normal N3 serialization";
 
+	File logFile;
+	
 	HashMap<String, String> shortToUri = new HashMap();
 	HashMap<String, SubjectCount> subjectMap = new HashMap();
 //	HashMap<String, SubjectCount> objectMap = new HashMap();
@@ -146,40 +148,40 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 	
 
 	protected long computeOrginalNTriple(Model model, File file) {
-		String fileName = file.getAbsolutePath()+"_N3.n3.bz2";
-		if(!file.isDirectory()) {
-			fileName = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
-		}
+//		String fileName = file.getAbsolutePath()+"_N3.n3.bz2";
+//		if(!file.isDirectory()) {
+//			fileName = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
+//		}
 		File out = new File(file.getAbsolutePath()+"_N3.n3.bz2");
-		if(!file.isDirectory() && file.exists() && file.canRead() && (fileName.equalsIgnoreCase("nt") || fileName.equalsIgnoreCase("n3"))) {
-			try {
-				InputStream fileInputStream = new BufferedInputStream (new FileInputStream (file));
-				OutputStream fos = new BufferedOutputStream(new FileOutputStream(out));
-		        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
-		        
-				byte[] buffer = new byte [524288];
-				int bytesRead;
-				while ((bytesRead = fileInputStream.read (buffer)) != -1) {
-					outputStream.write (buffer, 0, bytesRead);
-				}
-				outputStream.close();
-				fileInputStream.close();
-				} catch(Exception e) {
-					e.printStackTrace();
-				}
-		} else {
+//		if(!file.isDirectory() && file.exists() && file.canRead() && (fileName.equalsIgnoreCase("nt") || fileName.equalsIgnoreCase("n3"))) {
+//			try {
+//				InputStream fileInputStream = new BufferedInputStream (new FileInputStream (file));
+//				OutputStream fos = new BufferedOutputStream(new FileOutputStream(out));
+//		        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
+//		        
+//				byte[] buffer = new byte [524288];
+//				int bytesRead;
+//				while ((bytesRead = fileInputStream.read (buffer)) != -1) {
+//					outputStream.write (buffer, 0, bytesRead);
+//				}
+//				outputStream.close();
+//				fileInputStream.close();
+//				} catch(Exception e) {
+//					e.printStackTrace();
+//				}
+//		} else {
 			try {
 				OutputStream fos = new BufferedOutputStream(new FileOutputStream(out));
 		        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
 			    
-				model.write(outputStream, "N-TRIPLE");
+				model.write(outputStream, "N3");
 			
 				outputStream.close();
 				fos.close();
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
-		}
+//		}
 		if(out.exists())
 			return out.length();
 		else
@@ -282,7 +284,7 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 
 	 
 	protected void writeLogFile(File source, String log, boolean append) {
-		File logFile = new File(source.getAbsolutePath()+"_log"+logFileSuffix+".txt");
+		logFile = new File(source.getAbsolutePath()+"_log"+logFileSuffix+".txt");
 		try {
 			
 			FileWriter writer =  new FileWriter(logFile, append);
@@ -295,6 +297,9 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 		}
 	}
 
+	public File getLogFile() {
+		return logFile;
+	}
 
 	@Override
 	public void addAbbreviation(String sURI, String fullURI) {

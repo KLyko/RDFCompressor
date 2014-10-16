@@ -246,7 +246,8 @@ public class IndexBasedCompressor extends BasicCompressor implements Compressor,
 				writeLogFile(input, "\nExeption:"+e+" \n", true);
 		 	}
 		 	setChanged();
-		 	notifyObservers("finished");
+		 	status.update("", "finished");
+		 	notifyObservers(status);
 		}
 
 	private Model createFinalValueModel() {

@@ -62,6 +62,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 	}
 	
 	public ModelCompressor(File input) {
+		showDebug = false;
 		setFile(input);
 	}
 	
@@ -78,10 +79,10 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 		long byteLength = input.length();
 		log+= "Length in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB\n\n";
 
- 		status.update("Lodaded Jena Model", "Reading Model and building Rules...");
+ 		status.update("Initialized", "Loading Jena Model");
 // 		feedback.timePassed
 		setChanged();
- 		notifyObservers("Loaded Model");
+ 		notifyObservers(status);
 		writeLogFile(input, log, false);
 	/*############## Reading Model, creating all rules ################################################*/
 		long start = System.currentTimeMillis();
@@ -91,13 +92,13 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 		InstantCompressedGraph ruleGraph = new InstantCompressedGraph(model.size(), true, delete);
 		shortToUri.putAll(model.getNsPrefixMap());
 		long middle = System.currentTimeMillis();
-		setChanged();
-		
- 		notifyObservers("Loaded Model in "+(middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds");
+	
  		String print = "Loaded model took: " + (middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds";
 		System.out.println(print);
 		writeLogFile(input, print, true);
-		
+		setChanged();
+		status.update("Loaded Model in "+(middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds", "Reading and building rules.");
+ 		notifyObservers(status);
 		/*Query all properties*/
  		String query = "SELECT DISTINCT ?p "+
  					"WHERE {" +
@@ -123,7 +124,6 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
  				   if(timeSpend>0)
  					   stat+="% Rule add("+durationRuleAdding+")= "+((durationRuleAdding/timeSpend)*100)+" % ValueModel("+valueModelCreation+")= "+((valueModelCreation/timeSpend)*100)+"\n";
  			System.out.println(stat);
- 			writeLogFile(input, print, true);
 			lastPropTime = System.currentTimeMillis();
 			stmtCountByProperty=0; objByProp=0; valueObjectByProp=0;
 			sumRuleCreation += durationRuleAdding;
@@ -221,8 +221,9 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
  		middle=System.currentTimeMillis();
  		/*############## compute super rules once ###########################################*/
 //		middle = System.currentTimeMillis();
+ 		status.update("Created all rules" + timeRules + " milli seconds = " + timeRules/1000 +" seconds.", "Computing super rules.");
 		setChanged();
- 		notifyObservers("Created all Rules. Computing SuperRules...");
+ 		notifyObservers(status);
 // 		this.notifyAll();
 // 		this.wait();
  		ruleGraph.computeAllSuperRulesOnce();
@@ -230,22 +231,25 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 		System.out.println(print);
 		writeLogFile(input, print, true);
  		middle = System.currentTimeMillis();
+ 		status.update("Super rules computed", "Removing redundancies");
  		/*############## remove redundancies ################################################*/
  		ruleGraph.removeRedundantParentRules();
  		print = "Removed redundancies in: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 		System.out.println(print);
-		writeLogFile(input, print, true);				
+		writeLogFile(input, print, true);			
+		status.update("Removed redundancies in: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds", "Sorting subjects by frequence.");
 		setChanged();
- 		notifyObservers(print+" Sorting subject indices by frequence...");
+ 		notifyObservers(status);
  		middle =System.currentTimeMillis();
  		/*############## reorganize: sort subjects per frequence ############################*/
  		subIndexMap = sortSubjectsFrequenceBased(subjectMap);
  		long end = System.currentTimeMillis();
 		print = "Sorting Frequence Based took "+(end-middle)+" ms = "+((end-middle)/1000)+ " s";
 		System.out.println(print);
+		status.update("Sorting Frequence Based took "+(end-middle)+" ms = "+((end-middle)/1000)+ " s", "Writing tar file.");
 		writeLogFile(input, print, true);
 		setChanged();
- 		notifyObservers(print+" start writing tar file...");
+ 		notifyObservers(status);
  		middle = System.currentTimeMillis();
  		/*############## writing tar file ############################*/
  		try{
@@ -260,8 +264,9 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
  		print += "\nWriting files took: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 		System.out.println(print);
 		writeLogFile(input, print, true);
+		status.update("Written files. Writing files took: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds.", "Computing addtional stuff...");
 		setChanged();
- 		notifyObservers("Written files. Computing addtional stuff...");
+ 		notifyObservers(status);
 		
  		print = "Overall : " + (System.currentTimeMillis()-start) + " milli seconds = " + (System.currentTimeMillis()-start)/1000 +" seconds";
 		System.out.println(print);
@@ -271,27 +276,35 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 		
 		int nrOfRules = ruleGraph.getRules().size();
 		int sizeOfRules = ruleGraph.size();
+		
+		
 		double tripleRatio = new Double(sizeOfRules)/new Double(stmtCount);
 		log ="\nNr of triples="+stmtCount+"(of which have literal objects="+valueStmtCount+") Nr of Rules="+nrOfRules+" Size of Rules="+sizeOfRules+" ratio(#triples/Rule.size())="+tripleRatio;
 		
 		log+= "\nLength in Bytes = "+ byteLength + "= "+byteLength/1024 +" KB = "+ byteLength/(1024*1024)+" MB";
+		middle = System.currentTimeMillis();
 		long n3 = computeOrginalNTriple(model, input);
+		long durBZip2 = System.currentTimeMillis()-middle;
 		log += "\n";
 		double sizeRatio =  new Double(byteLength) / new Double(n3);
 		log += "Orginal N3 length in Byte = "+n3+" = "+n3/1024+" KB ="+n3/(1024*1024)+" MB Ratio Our/BZ2="+sizeRatio;
-			writeLogFile(input, log, true);
-
-			
+			writeLogFile(input, log, true);			
 			log ="\n\n";
+			log+="Compressing NT with plainBzip2 required "+durBZip2+" milli seconds = "+durBZip2/1000+" seconds\n";
 			log+="Nr of Subject/Objecs = "+subjectMap.size()+" Number of Properties="+propertyMap.size();
 			log+="\nNr of single Subjects/Objects " + nrOfSingleSubs;
 			log+="\nNr of atomic rules="+nrOfAtomicRules+"; Nr of parents="+nrOfParents+"; Nr of Delete Rules "+nrOfDeleteRules+"; Size of delete entries="+sizeOfDeleteEntries;
-			writeLogFile(input, log, true);
+		writeLogFile(input, log, true);
 			log ="\nNumber of falsePositive bloom uri checks = "+bloomErrorRate;
 			
-			writeLogFile(input, log, true);
-			if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 
-				printDebug(ruleGraph);
+		writeLogFile(input, log, true);
+		if(System.getProperty("user.name").equalsIgnoreCase("lyko") && showDebug) 
+			printDebug(ruleGraph);
+		
+		status.setFinished();
+		status.update("Finished computation in "+(System.currentTimeMillis()-start) + " milli seconds = " + (System.currentTimeMillis()-start)/1000 +" seconds", "");
+		setChanged();
+ 		notifyObservers(status);
 			
 	}
 

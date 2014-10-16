@@ -2,14 +2,15 @@ package de.uni_leipzig.simba.io;
 
 
 public class Status {
-	String feedback; // for any label presenting some feedback about work done.
-	String status; // describes the current operation; 
-	int step; // number of this
-	int maxSteps = 6;
+	String feedback =""; // for any label presenting some feedback about work done.
+	String status=""; // describes the current operation; 
+	int step = 0; // number of this
+	int maxSteps = 9;
 	public Status(String status, int nr) {
 		this.status = status;
 		this.step = nr;
 	}
+	boolean finished = false;
 	/**
 	 * Updates Status with new information and increases its enumerator.
 	 * @param feedback
@@ -30,6 +31,18 @@ public class Status {
 	 * @return Whether computation is done.
 	 */
 	public boolean isFinished() {
-		return step>=maxSteps;
+//		return step>=maxSteps || finished;
+		return finished;
 	}		
+	
+	public String getFeedback() {
+		return feedback;
+	}
+	public String getStatus() {
+		return status;
+	}
+	
+	public void setFinished() {
+		finished = true;
+	}
 }
