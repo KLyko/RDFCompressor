@@ -290,7 +290,7 @@ public class DefaultDecompressor implements DeCompressor{
 	
 	
 	public static void main(String args[]) {
-		File file = new File("resources/n3.n3.cp.bz2");
+		File file = new File("resources/dummy_data2.nt.cp.bz2");
 		DefaultDecompressor decmpr = new DefaultDecompressor();
 		try {
 			Model glob = decmpr.decompress(file);

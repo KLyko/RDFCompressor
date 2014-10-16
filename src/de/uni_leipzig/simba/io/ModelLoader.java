@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.util.FileManager;
 
 public class ModelLoader {
@@ -70,14 +71,46 @@ public class ModelLoader {
 		}
 	}
 	
+	/**
+	 * A Method to create a subModel of size percentage.
+	 * @param original Original Model to get sub model from.
+	 * @param percentage Percentage of the subModel: 0 < percentage < 1.
+	 * @return
+	 */
+	public static Model createSubModel(Model original, float percentage) {
+		if(percentage<=0)
+			return ModelFactory.createDefaultModel();
+		if(percentage>=1)
+			return original;
+		Model subModel = ModelFactory.createDefaultModel();
+		subModel.setNsPrefixes(	original.getNsPrefixMap());
+		long stmtMax = Math.round(original.size() * percentage);
+		long stmtCount = 0;
+		System.out.println(percentage+"% of "+original.size()+" = "+stmtMax);
+		StmtIterator it = original.listStatements();
+		while(it.hasNext() && stmtCount<stmtMax) {
+			subModel.add(it.next());
+			stmtCount++;
+		}
+		return subModel;
+	}
+	
+	
 	public static void main(String args[]) {
-		String file = "resources/jamendo.rdf";
+		String file = "resources/archive_hub_dump.nt";
 		String folder = "resources/LUBM/lubm_50/";
 		Model m;
 		try {
 			m = ModelLoader.getModel(file);
 
 			System.out.println(m.size());
+			float[] floats  = new float[]{0.1f, 0.2f, 0.5f, 0.8f, 1f};
+			for(float perc : floats) {
+				System.out.println("####### "+perc+"% #########");
+				Model subModel = createSubModel(m, perc);
+				System.out.println("sumModel: "+subModel.size()+" - "+m.difference(subModel).size());
+				
+			}
 			
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block

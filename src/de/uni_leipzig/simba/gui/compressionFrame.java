@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.compressor.gui;
+package de.uni_leipzig.simba.gui;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
