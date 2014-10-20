@@ -62,7 +62,6 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 	}
 	
 	public ModelCompressor(File input) {
-		showDebug = false;
 		setFile(input);
 	}
 	
@@ -86,19 +85,31 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 		writeLogFile(input, log, false);
 	/*############## Reading Model, creating all rules ################################################*/
 		long start = System.currentTimeMillis();
-		model = readModel();
-		
-		valueModel = ModelFactory.createDefaultModel();
-		InstantCompressedGraph ruleGraph = new InstantCompressedGraph(model.size(), true, delete);
-		shortToUri.putAll(model.getNsPrefixMap());
+		Model model = readModel();
 		long middle = System.currentTimeMillis();
-	
+		
  		String print = "Loaded model took: " + (middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds";
 		System.out.println(print);
 		writeLogFile(input, print, true);
 		setChanged();
 		status.update("Loaded Model in "+(middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds", "Reading and building rules.");
  		notifyObservers(status);
+ 		compress(model, "");
+	}
+	
+	public void compress(Model model, String logExt) {
+		this.model = model;
+		if(logExt.length() > 0) {
+			logFileSuffix = logExt;
+			log = "Compressing Model direct: "+logExt+"\n";
+			writeLogFile(input, log, false);
+		}
+		long start = System.currentTimeMillis();
+		long middle = System.currentTimeMillis();
+		valueModel = ModelFactory.createDefaultModel();
+		InstantCompressedGraph ruleGraph = new InstantCompressedGraph(model.size(), true, delete);
+		shortToUri.putAll(model.getNsPrefixMap());
+		
 		/*Query all properties*/
  		String query = "SELECT DISTINCT ?p "+
  					"WHERE {" +
@@ -214,7 +225,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 //			System.out.println(out);
 		}//for all properties
  		long timeRules = (System.currentTimeMillis()-middle);
- 		print = "Created all rules" + timeRules + " milli seconds = " + timeRules/1000 +" seconds\n";
+ 		String print = "Created all rules" + timeRules + " milli seconds = " + timeRules/1000 +" seconds\n";
 // 		print += "% Rule Adding = "+((sumRuleCreation/timeRules)*100)+", %ValueModelCreation="+((sumValueModelCreation/timeRules)*100);
 		System.out.println(print);
 		writeLogFile(input, print, true);
@@ -271,8 +282,8 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
  		print = "Overall : " + (System.currentTimeMillis()-start) + " milli seconds = " + (System.currentTimeMillis()-start)/1000 +" seconds";
 		System.out.println(print);
 		writeLogFile(input, print, true);
-		File outFile = new File(input.getAbsolutePath() + ".cp.bz2");
-		byteLength = outFile.length();
+		File outFile = new File(input.getAbsolutePath()+ logExt + ".cp.bz2");
+		long byteLength = outFile.length();
 		
 		int nrOfRules = ruleGraph.getRules().size();
 		int sizeOfRules = ruleGraph.size();
@@ -298,8 +309,8 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 			log ="\nNumber of falsePositive bloom uri checks = "+bloomErrorRate;
 			
 		writeLogFile(input, log, true);
-		if(System.getProperty("user.name").equalsIgnoreCase("lyko") && showDebug) 
-			printDebug(ruleGraph);
+		if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 
+			printDebug(ruleGraph, System.out, 10);
 		
 		status.setFinished();
 		status.update("Finished computation in "+(System.currentTimeMillis()-start) + " milli seconds = " + (System.currentTimeMillis()-start)/1000 +" seconds", "");
@@ -309,7 +320,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 	}
 
 	private void writeSingleTarFile(File input2, IndexCompressedGraph ruleGraph) throws IOException{
-		OutputStream fos = new BufferedOutputStream(new FileOutputStream(input.getAbsolutePath() + ".cp.bz2"));
+		OutputStream fos = new BufferedOutputStream(new FileOutputStream(input.getAbsolutePath() +logFileSuffix+".cp.bz2"));
         BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
 		    //Prefixes
 //		    outputStream.write("\n".getBytes());
@@ -458,5 +469,5 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 		compr.setLogFileSuffix("combined");
 		compr.compress();
 	}
-
+	
 }

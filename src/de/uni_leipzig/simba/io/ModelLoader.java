@@ -7,6 +7,7 @@ import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
@@ -98,10 +99,10 @@ public class ModelLoader {
 	
 	public static void main(String args[]) {
 		String file = "resources/archive_hub_dump.nt";
-		String folder = "resources/LUBM/lubm_50/";
+		String folder = "resources/ubl_part/";
 		Model m;
 		try {
-			m = ModelLoader.getModel(file);
+			m = ModelLoader.getModel(folder);
 
 			System.out.println(m.size());
 			float[] floats  = new float[]{0.1f, 0.2f, 0.5f, 0.8f, 1f};
@@ -109,7 +110,9 @@ public class ModelLoader {
 				System.out.println("####### "+perc+"% #########");
 				Model subModel = createSubModel(m, perc);
 				System.out.println("sumModel: "+subModel.size()+" - "+m.difference(subModel).size());
-				
+			    for (Entry<String, String>  entry : subModel.getNsPrefixMap().entrySet()) {
+			    	System.out.println("->"+entry);
+			    }
 			}
 			
 		} catch (UnsupportedEncodingException e) {

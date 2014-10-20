@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +33,7 @@ import de.uni_leipzig.simba.io.Status;
 public class BasicCompressor extends Observable implements IndexBasedCompressorInterface {
 	public String logFileSuffix="";
 	int bloomErrorRate = 0;
-	boolean showDebug = true;
+//	boolean showDebug = true;
 	/**Used to separate elements in Lists (Subjects, Superrules)*/
 	public static final String LIST_SEP = "|";
 	/**Used to separate property and object index*/
@@ -152,7 +153,7 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 //		if(!file.isDirectory()) {
 //			fileName = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
 //		}
-		File out = new File(file.getAbsolutePath()+"_N3.n3.bz2");
+		File out = new File(file.getAbsolutePath()+logFileSuffix+".nt.bz2");
 //		if(!file.isDirectory() && file.exists() && file.canRead() && (fileName.equalsIgnoreCase("nt") || fileName.equalsIgnoreCase("n3"))) {
 //			try {
 //				InputStream fileInputStream = new BufferedInputStream (new FileInputStream (file));
@@ -174,7 +175,7 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 				OutputStream fos = new BufferedOutputStream(new FileOutputStream(out));
 		        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
 			    
-				model.write(outputStream, "N3");
+				model.write(outputStream, "N-TRIPLE");
 			
 				outputStream.close();
 				fos.close();
@@ -223,7 +224,8 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 //		return map;
 //	}
 	
-	protected void printDebug(IndexCompressedGraph graph) {
+	protected void printDebug(IndexCompressedGraph graph, PrintStream stream, int countMax) {
+		Collections.sort(graph.getRules());
 //		System.out.println("Resorted list...");
 //		for(Entry<Integer, Integer> e: subIndexMap.entrySet()) {
 //			System.out.println(e.getKey() +" => "+e.getValue());
@@ -234,7 +236,8 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 //		System.out.println("Predicates:\n"+propertyMap);
 //		
 //		System.out.println("Objects:\n"+objectMap);
-		System.out.println("GRAPH...\n");
+		stream.println("GRAPH...\n");
+		int count = 0;
 		for(IndexRule rule: graph.getRules()) {
 //			String out= "("+rule.atomNr+" "+rule.isAtomic()+")"+rule.getNumber()+": ";
 			String out= rule.getNumber()+": ";
@@ -270,7 +273,11 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 						out+=", ";
 				}
 			}
-			System.out.println(out);			
+			stream.println(out);			
+			count++;
+			if(count>=countMax) {
+				break;
+			}
 		}
 //		for(Integer i : graph.subjectToRule.keySet()) {
 //			String sOut= "s("+i+"):";

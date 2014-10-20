@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -48,15 +49,29 @@ public class IndexBasedCompressor extends BasicCompressor implements Compressor,
 			writeLogFile(input, log, false);
 			
 		 	long start = System.currentTimeMillis();
+		 	setChanged();
+		 	notifyObservers("Loading Model...");		 
 		 	try {
-		 		setChanged();
-		 		notifyObservers("Loading Model...");
-//		 		this.notifyAll();
-//				this.wait();
+				model = ModelLoader.getModel(input.getAbsolutePath());
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		 	compress(model, "");
+			long middle = System.currentTimeMillis();
+			String print = "Loading model took: " + (middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds";
+			System.out.println(print);
+			writeLogFile(input, print, true);
+		
+ 	}
+		 	@Override
+		 	public void compress(Model model, String logExt) {
+		 	try {
+		 		long start = System.currentTimeMillis();
 		 		valueModel = ModelFactory.createDefaultModel();
-		 
-		 		model = ModelLoader.getModel(input.getAbsolutePath());
-		 	
 				shortToUri.putAll(model.getNsPrefixMap());
 				setChanged();
 		 		notifyObservers("Creating Rules...");
@@ -66,12 +81,7 @@ public class IndexBasedCompressor extends BasicCompressor implements Compressor,
 				dcg = new IndexCompressedGraph(model.size(), true, delete);
 				
 				StmtIterator iter = model.listStatements();
-				
-				long middle = System.currentTimeMillis();
-				long middle2 = System.currentTimeMillis();
-				String print = "Loading model took: " + (middle-start) + " milli seconds = "+ (middle-start) /1000 +" seconds";
-				System.out.println(print);
-				writeLogFile(input, print, true);
+				long middle = System.currentTimeMillis(); long middle2=System.currentTimeMillis();
 				int valueStmtCount = 0;
 				int stmtCount = 0;
 				while( iter.hasNext() ){
@@ -103,7 +113,7 @@ public class IndexBasedCompressor extends BasicCompressor implements Compressor,
 							dcg.addRule(rule, indexS);
 						}catch(Exception e) {
 							e.printStackTrace();
-							print = "Error adding rule!";
+							String print = "Error adding rule!";
 							System.out.println(print);
 							writeLogFile(input, print, true);
 						}
@@ -129,7 +139,7 @@ public class IndexBasedCompressor extends BasicCompressor implements Compressor,
 					
 				}
 				
-				print = "Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
+				String print = "Reading all rules: " + (System.currentTimeMillis()-middle) + " milli seconds = " + (System.currentTimeMillis()-middle)/1000 +" seconds";
 				System.out.println(print);
 				writeLogFile(input, print, true);
 				
@@ -205,7 +215,7 @@ public class IndexBasedCompressor extends BasicCompressor implements Compressor,
 	//			log += print +"\n\n";
 				writeLogFile(input, print, true);
 				File outFile = new File(input.getAbsolutePath() + ".cp.bz2");
-				byteLength = outFile.length();
+				long byteLength = outFile.length();
 				
 				int nrOfRules = dcg.getRules().size();
 				int sizeOfRules = dcg.size();
@@ -229,7 +239,7 @@ public class IndexBasedCompressor extends BasicCompressor implements Compressor,
 	 			
 	 			writeLogFile(input, log, true);
 	 			if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 
-	 				printDebug(dcg);
+	 				printDebug(dcg, System.out, Integer.MAX_VALUE);
 		 	}catch(Exception e) {
 		 		File errorFile = new File(input.getAbsolutePath()+"_error.txt");
 				PrintStream ps;
