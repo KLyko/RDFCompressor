@@ -28,13 +28,19 @@ import javax.swing.JSpinner;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import javax.swing.border.TitledBorder;
 
 public class MainFrame extends JFrame {
 
 	private JPanel contentPane;
 	private JTextField txtFilerdf;
+	private JButton btnStartDecompression;
+	private JButton btnStartCompression;
+	private JSpinner spinner;
+	JCheckBox chckbxActivateDeleteRules;
 	private File fileToCompress;
 	compressionFrame cframe;
+	decompressionFrame dframe;
 	/**
 	 * Launch the application.
 	 */
@@ -78,7 +84,7 @@ public class MainFrame extends JFrame {
 		gbc_headPanel.gridy = 0;
 		contentPane.add(headPanel, gbc_headPanel);
 		
-		JLabel lblHead = new JLabel("Head");
+		JLabel lblHead = new JLabel("RDFcompressor Demo");
 		headPanel.add(lblHead);
 		
 		JPanel centerPanel = new JPanel();
@@ -95,13 +101,17 @@ public class MainFrame extends JFrame {
 		centerPanel.add(filePanel);
 		filePanel.setLayout(null);
 		
+		JLabel lblNewLabel = new JLabel("Input file:");
+		lblNewLabel.setBounds(5, 3, 50, 14);
+		filePanel.add(lblNewLabel);
+		
 		txtFilerdf = new JTextField();
 		txtFilerdf.setText(fileToCompress.toString());
-		txtFilerdf.setBounds(0, 0, 270, 20);
+		txtFilerdf.setBounds(55, 0, 270, 20);
 		filePanel.add(txtFilerdf);
 		txtFilerdf.setColumns(10);
 		
-		JButton fileSelectButton = new JButton("select");
+		JButton fileSelectButton = new JButton("Browse..");
 		fileSelectButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				final JFileChooser fc = new JFileChooser(fileToCompress.toString());
@@ -112,19 +122,37 @@ public class MainFrame extends JFrame {
 					txtFilerdf.setText(fc.getSelectedFile().toString());
 					fileToCompress = fc.getSelectedFile();
 				}
+				
+				if (txtFilerdf.getText().endsWith("bz2")){
+					btnStartDecompression.setEnabled(true);
+					btnStartCompression.setEnabled(false);
+					spinner.setEnabled(false);
+					chckbxActivateDeleteRules.setEnabled(false);
+				}
+				else{
+					//TODO check valid input formats
+					btnStartDecompression.setEnabled(false);
+					btnStartCompression.setEnabled(true);
+					spinner.setEnabled(true);
+					chckbxActivateDeleteRules.setEnabled(true);
+				}
 			}
 		});
 		
-		fileSelectButton.setBounds(306, 0, 89, 23);
+		fileSelectButton.setBounds(330, 0, 80, 23);
 		filePanel.add(fileSelectButton);
 		
 		JPanel propertyPanel = new JPanel();
+		propertyPanel.setBorder(new TitledBorder(null, "Settings", TitledBorder.LEADING, TitledBorder.TOP, null, null));
 		centerPanel.add(propertyPanel);
+		propertyPanel.setLayout(null);
 		
-		JCheckBox chckbxActivateDeleteRules = new JCheckBox("activate Delete Rules");
+		chckbxActivateDeleteRules = new JCheckBox("activate Delete Rules");
+		chckbxActivateDeleteRules.setBounds(5, 15, 127, 23);
 		propertyPanel.add(chckbxActivateDeleteRules);
 		
-		JSpinner spinner = new JSpinner();
+		spinner = new JSpinner();
+		spinner.setBounds(135, 15, 29, 20);
 		propertyPanel.add(spinner);
 		
 		JPanel southPanel = new JPanel();
@@ -135,10 +163,7 @@ public class MainFrame extends JFrame {
 		gbc_southPanel.gridy = 3;
 		contentPane.add(southPanel, gbc_southPanel);
 		
-
-		
-		
-		JButton btnStartCompression = new JButton("Start Compression");
+		btnStartCompression = new JButton("Start Compression");
 		btnStartCompression.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
@@ -147,19 +172,31 @@ public class MainFrame extends JFrame {
 		});
 		southPanel.add(btnStartCompression);
 		
-		
-		System.out.println("Compressing File "+fileToCompress.toString());
-		cframe = new compressionFrame(fileToCompress);
-//		this.add(cframe);
-//		cframe.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-//		cframe.pack();
-//		cframe.setVisible(true);
+		btnStartDecompression = new JButton("Start Decompression");
+		btnStartDecompression.setEnabled(false);
+		btnStartDecompression.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				startDecompression();
+			}
+		});
+		southPanel.add(btnStartDecompression);
 	}
 	
 	public void startCompression() {
+		System.out.println("Compressing File "+fileToCompress.toString());
+		cframe = new compressionFrame(fileToCompress);
 		cframe.setVisible(true);
 		cframe.setFile(fileToCompress);
 		cframe.setAlwaysOnTop(true);
 		cframe.start();
+	}
+	
+	public void startDecompression() {
+		System.out.println("Decompressing File "+fileToCompress.toString());
+		dframe = new decompressionFrame(fileToCompress);
+		dframe.setVisible(true);
+		dframe.setFile(fileToCompress);
+		dframe.setAlwaysOnTop(true);
+		dframe.start();
 	}
 }

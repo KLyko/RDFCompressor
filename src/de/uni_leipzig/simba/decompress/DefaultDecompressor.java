@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Observable;
 import java.util.Set;
 
 import org.apache.commons.compress.compressors.CompressorException;
@@ -34,23 +35,48 @@ import de.uni_leipzig.simba.compress.IndexBasedCompressor;
 import de.uni_leipzig.simba.data.IndexProfile;
 import de.uni_leipzig.simba.data.IndexRule;
 import de.uni_leipzig.simba.io.ModelLoader;
+import de.uni_leipzig.simba.io.ObserverFeedback;
+import de.uni_leipzig.simba.io.Status;
 
-public class DefaultDecompressor implements DeCompressor{
+public class DefaultDecompressor extends Observable implements DeCompressor, Runnable{
 	HashMap<Integer, String> subjects = new HashMap<Integer, String>();
 	HashMap<Integer, String> properties = new HashMap<Integer, String>();
 	HashMap<String, String> abbrev = new HashMap<String, String>();
 	
 	HashMap<Integer, IndexRule> ruleMap = new HashMap<Integer, IndexRule>();
 	
-
+	File file;
+	public Status status;
+	public ObserverFeedback feedback;
+	
 	Model globalModel = ModelFactory.createDefaultModel();
+	
+	public DefaultDecompressor(File input) {
+		this.file = input;
+		feedback = new ObserverFeedback();
+ 		feedback.currentStatus = status;
+	}
+	
+	@Override
+	public void run() {
+		try{
+			decompress(this.file);
+		}
+		catch (Exception e){
+			System.out.println(e);
+		}
+	}
 	
 	@Override
 	public Model decompress(File file) throws IOException, CompressorException {
-
+		status = new Status("Begin decompression", 0, 3);
 		
 		BufferedWriter bw = new BufferedWriter(new FileWriter("tmp.n3", false));
 		BufferedReader br = getBufferedReaderForBZ2File(file.getAbsolutePath());
+		
+		setChanged();
+		status.update("Initialized", "Parsing file");
+ 		notifyObservers(status);
 		
 		String line;
 		int stage = 0;
@@ -78,6 +104,9 @@ public class DefaultDecompressor implements DeCompressor{
 //		 
 		 ArrayList<String> triples = new ArrayList<String>(22);
 		 
+		setChanged();
+		status.update("File successfully parsed", "Building triples");
+	 	notifyObservers(status);
 		 
 		 for(Integer rNr : ruleMap.keySet()) {
 		
@@ -101,6 +130,9 @@ public class DefaultDecompressor implements DeCompressor{
 		
 		bw.close();
 		
+		setChanged();
+		status.update("Triples successfully built", "Reading value model");
+ 		notifyObservers(status);		
 		
 		Model valueModel = ModelFactory.createDefaultModel();
 		valueModel = ModelLoader.getModel("tmp.n3");
@@ -117,7 +149,11 @@ public class DefaultDecompressor implements DeCompressor{
 //			System.out.println("Read Stmt: " + subj+ " " + prop +" "+o);
 		}
 		
-		
+		setChanged();
+		status.setFinished();
+		status.update("Successfully decompressed " + triples.size() + " triples!", "");
+ 		notifyObservers(status);
+ 		
 		return globalModel;
 	}
 
@@ -291,7 +327,7 @@ public class DefaultDecompressor implements DeCompressor{
 	
 	public static void main(String args[]) {
 		File file = new File("resources/dummy_data2.nt.cp.bz2");
-		DefaultDecompressor decmpr = new DefaultDecompressor();
+		DefaultDecompressor decmpr = new DefaultDecompressor(file);
 		try {
 			Model glob = decmpr.decompress(file);
 			Map<String,String> map = glob.getNsPrefixMap();
