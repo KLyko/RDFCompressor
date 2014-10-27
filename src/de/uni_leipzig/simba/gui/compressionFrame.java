@@ -37,6 +37,10 @@ public class compressionFrame extends JFrame implements Observer{
 	JTextArea textArea;
 	ModelCompressor compr;
 	File f;
+	boolean delete = false;
+	int deleteBorder = 0;
+	
+	
 	/**
 	 * Launch the application.
 	 */
@@ -139,7 +143,10 @@ public class compressionFrame extends JFrame implements Observer{
 //		compr = new ModelCompressor(f);
 		Thread thread = new Thread(compr);
 		compr.setFile(f);
-		compr.setDelete(0);
+		if(delete)
+			compr.setDelete(deleteBorder);
+		else
+			compr.setDelete(0);
 		thread.start();
 //		compr.compress(f, 0);
 	}
@@ -171,5 +178,13 @@ public class compressionFrame extends JFrame implements Observer{
 		this.f = f;
 		compr.setFile(f);
 		lblCompressingFile.setText("Compressing File "+f.toString());
+	}
+	
+	public void setDeleteBorder(int border) {
+		if(border > 0) {
+			this.deleteBorder = border;
+			this.delete = true;
+		}
+		
 	}
 }

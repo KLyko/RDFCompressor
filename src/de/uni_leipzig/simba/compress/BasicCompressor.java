@@ -225,7 +225,7 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 //	}
 	
 	protected void printDebug(IndexCompressedGraph graph, PrintStream stream, int countMax) {
-		Collections.sort(graph.getRules());
+//		Collections.sort(graph.getRules());
 //		System.out.println("Resorted list...");
 //		for(Entry<Integer, Integer> e: subIndexMap.entrySet()) {
 //			System.out.println(e.getKey() +" => "+e.getValue());

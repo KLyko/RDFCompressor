@@ -36,6 +36,7 @@ import de.uni_leipzig.simba.data.IndexRule;
 import de.uni_leipzig.simba.data.InstantCompressedGraph;
 import de.uni_leipzig.simba.io.ModelLoader;
 import de.uni_leipzig.simba.io.ObserverFeedback;
+import de.uni_leipzig.simba.util.PrefixHelper;
 
 /**
  * Class to create compressed graph (rules, their super rules) while iterating the model.
@@ -51,6 +52,7 @@ import de.uni_leipzig.simba.io.ObserverFeedback;
  *
  */
 public class ModelCompressor extends BasicCompressor implements Compressor, Runnable {
+	boolean abbreviate = false;
 	private Model readModel()  {
 		Model model = ModelFactory.createDefaultModel();
  		try {
@@ -148,6 +150,11 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 			String uri = "";
 			if(p.isURIResource()) {
 				uri= p.getURI();
+//				if(model.shortForm(uri).length() == uri.length()) {
+//					String[] pref = PrefixHelper.generatePrefix(uri);
+//					System.out.println("Created prefix for "+uri+":\n"+pref[0]+" -> "+pref[1]);
+//					model.setNsPrefix(pref[0], pref[1]);
+//				}
 				uri = model.shortForm(uri);
 			}else {
 				uri = p.getId().toString();
@@ -163,6 +170,15 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 					Resource o_res = o_node.asResource();
 					if(o_res.isURIResource()) {
 						uri = o_node.asResource().getURI();
+						if(abbreviate && model.shortForm(uri).length() == uri.length()) {
+							try {
+								String[] pref = PrefixHelper.generatePrefix(uri);
+//								System.out.println("Created prefix for "+uri+":"+pref[0]+" -> "+pref[1]);
+								model.setNsPrefix(pref[0], pref[1] );
+							}catch(Exception e) {
+								
+							}							
+						}
 						uri = model.shortForm(uri);
 					}// o_node is resource and has URI
 					else {
@@ -178,6 +194,13 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 						Resource s = subIter.next();
 						if(s.isURIResource()) {
 							uri = s.getURI();
+							if(abbreviate && model.shortForm(uri).length() == uri.length()) {
+								try {
+									String[] pref = PrefixHelper.generatePrefix(uri);
+//									System.out.println("Created prefix for "+uri+":"+pref[0]+" -> "+pref[1]);
+									model.setNsPrefix(pref[0], pref[1] );
+								}catch(Exception e) {}	
+							}
 							uri = model.shortForm(uri);
 						} else {
 							uri = s.getId().toString();
@@ -204,6 +227,13 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 						Resource r = subIter.next();
 						if(r.isURIResource()) {
 							uri = r.getURI();
+							if(abbreviate && model.shortForm(uri).length() == uri.length()) {
+								try {
+									String[] pref = PrefixHelper.generatePrefix(uri);
+//									System.out.println("Created prefix for "+uri+":"+pref[0]+" -> "+pref[1]);
+									model.setNsPrefix(pref[0], pref[1] );
+								}catch(Exception e) {}	
+							}
 							uri = model.shortForm(uri);
 						} else {
 							uri = r.getId().toString();
@@ -310,7 +340,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 			
 		writeLogFile(input, log, true);
 		if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 
-			printDebug(ruleGraph, System.out, 10);
+			printDebug(ruleGraph, System.out, 20);
 		
 		status.setFinished();
 		status.update("Finished computation in "+(System.currentTimeMillis()-start) + " milli seconds = " + (System.currentTimeMillis()-start)/1000 +" seconds", "");

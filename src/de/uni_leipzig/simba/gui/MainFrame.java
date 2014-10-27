@@ -34,6 +34,9 @@ public class MainFrame extends JFrame {
 	private JPanel contentPane;
 	private JTextField txtFilerdf;
 	private File fileToCompress;
+	JCheckBox chckbxActivateDeleteRules;
+	JSpinner spinner;
+	
 	compressionFrame cframe;
 	/**
 	 * Launch the application.
@@ -56,7 +59,7 @@ public class MainFrame extends JFrame {
 	 * Create the frame.
 	 */
 	public MainFrame() {
-		fileToCompress = new File("resources/archive_hub_dump.nt");
+		fileToCompress = new File("resources/dummy_data2.nt");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
@@ -121,10 +124,11 @@ public class MainFrame extends JFrame {
 		JPanel propertyPanel = new JPanel();
 		centerPanel.add(propertyPanel);
 		
-		JCheckBox chckbxActivateDeleteRules = new JCheckBox("activate Delete Rules");
+		chckbxActivateDeleteRules = new JCheckBox("activate Delete Rules");
 		propertyPanel.add(chckbxActivateDeleteRules);
 		
-		JSpinner spinner = new JSpinner();
+		spinner = new JSpinner();
+		
 		propertyPanel.add(spinner);
 		
 		JPanel southPanel = new JPanel();
@@ -157,6 +161,9 @@ public class MainFrame extends JFrame {
 	}
 	
 	public void startCompression() {
+		if(chckbxActivateDeleteRules.isSelected()) {
+			cframe.setDeleteBorder((Integer)spinner.getValue());
+		}
 		cframe.setVisible(true);
 		cframe.setFile(fileToCompress);
 		cframe.setAlwaysOnTop(true);

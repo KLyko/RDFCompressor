@@ -40,6 +40,7 @@ public class IndexProfile implements IProfile<Integer, Integer, Integer>, Serial
 		return subjects.add(r);
 	}
 	
+	
 	@Override
 	public boolean equals(Object other) {
 		IndexProfile o = (IndexProfile) other;

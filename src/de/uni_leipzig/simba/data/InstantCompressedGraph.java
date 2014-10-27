@@ -3,6 +3,7 @@ package de.uni_leipzig.simba.data;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -79,7 +80,8 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 	
 	public void computeAllSuperRulesOnce() {
 		long start = System.currentTimeMillis();
-		Collections.sort(rules); // O(n*log n). Order by size
+		if(this.deleteBorder <= 0)
+			Collections.sort(rules); // O(n*log n). Order by size
 		long end = System.currentTimeMillis();
 		
     	log+="\n\tSorting rules by size:"+(end-start)+" ms = "+((end-start)/1000)+" s";
@@ -88,7 +90,7 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 		
 		//1st compute all supersets
 		String  println = "\n\tComputing super rules by iterating over all rules ";
-//		if(this.deleteBorder <= 0) {
+		if(this.deleteBorder <= 0) {
 	    	if(rules.size()<500) { // if we only have some rules use normal approach: iterate over all other rules.
 	    		println += " with subject-set based approach.";
 	    		for(int i = 0; i<rules.size(); i++) { //O(n²)
@@ -114,7 +116,24 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 	    			}
 	    		}
 	    	}
-    	
+		} else { //compute delete rule
+			for(IndexRule r : rules) { 
+//    			if(r.getProfile().subjects.size()>1) {
+    				HashMap<Integer, RuleToDeleteGraph> dels = computeDeleteBasedRules(r, this.deleteBorder);
+    				for(Entry<Integer, RuleToDeleteGraph> entry : dels.entrySet()) {
+    					IndexRule parent = rules.get(entry.getKey());
+    					if(!parent.parents.contains(r)) {
+	    					RuleToDeleteGraph rToDelGraph = entry.getValue();
+	//    					rToDelGraph.
+	    					parent.deleteGraph.addAll(rToDelGraph.notIn);
+	    					parent.addChild(r);
+	    					r.addParent(parent);
+    					}
+    				}
+//    			}
+			}
+			
+		}
 		end = System.currentTimeMillis();
 		println+=" took "+(end-start)+" ms = "+((end-start)/1000) +" s";
 		log+=println;

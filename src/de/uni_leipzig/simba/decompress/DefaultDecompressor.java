@@ -6,7 +6,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -36,6 +35,9 @@ import de.uni_leipzig.simba.data.IndexRule;
 import de.uni_leipzig.simba.io.ModelLoader;
 
 public class DefaultDecompressor implements DeCompressor{
+	
+	boolean hasDeleteRules = false;
+	
 	HashMap<Integer, String> subjects = new HashMap<Integer, String>();
 	HashMap<Integer, String> properties = new HashMap<Integer, String>();
 	HashMap<String, String> abbrev = new HashMap<String, String>();
@@ -78,22 +80,40 @@ public class DefaultDecompressor implements DeCompressor{
 //		 
 		 ArrayList<String> triples = new ArrayList<String>(22);
 		 
-		 
-		 for(Integer rNr : ruleMap.keySet()) {
-		
-			 Set<String> nts = buildNTriples(rNr, new HashSet<Integer>());
-//			 System.out.println("Building rule nr "+rNr+": "+nts);
+		 if(!hasDeleteRules) {
+			 for(Integer rNr : ruleMap.keySet()) {
+					
+				 Set<String> nts = buildNTriples(rNr, new HashSet<Integer>());
+//				 System.out.println("Building rule nr "+rNr+": "+nts);
+				
+				 triples.addAll(nts);
+			 }
+			 Collections.sort(triples);
+			 for(String s : triples) {
+//				 String tr = s.
+//				 globalModel.createStatement(globalModel.getResource(uri), p, o)
+				 System.out.println(s);
+			 }
 			
-			 triples.addAll(nts);
+			System.out.println("\n\nNr of triples: "+triples.size());
+		 } else {
+			 System.out.println("Model has delete rules");
+			 for(Entry<Integer, IndexRule> entry : ruleMap.entrySet()) {
+				 System.out.println(entry.getValue() + "Par:\t" +entry.getValue().getParentIndices()+ "\tdel: "+entry.getValue().deleteGraph);
+			 }
+			 addSubjectsToSuperRules();
+			 for(Entry<Integer, IndexRule> entry : ruleMap.entrySet()) {
+				 System.out.println(entry.getValue() + "Par:\t" +entry.getValue().getParentIndices()+ "\tdel: "+entry.getValue().deleteGraph);
+			 }
+//			 for(Integer rNr : ruleMap.keySet()) {
+					
+				 Set<String> nts = buildNTriples(0, new HashSet<Integer>());
+//				 System.out.println("Building rule nr "+rNr+": "+nts);
+				
+				 triples.addAll(nts);
+//			 }
 		 }
-		 Collections.sort(triples);
-		 for(String s : triples) {
-//			 String tr = s.
-//			 globalModel.createStatement(globalModel.getResource(uri), p, o)
-			 System.out.println(s);
-		 }
-		
-		System.out.println("\n\nNr of triples: "+triples.size());
+
 		
 		
 		/*############################################### VALUE MODEL  ####################################*/
@@ -127,8 +147,9 @@ public class DefaultDecompressor implements DeCompressor{
 	 * @param init
 	 * @param uris
 	 * @return
+	 * @throws IOException 
 	 */
-	private Set<String> buildNTriples(int ruleNr, Set<Integer> uris) {
+	private Set<String> buildNTriples(int ruleNr, Set<Integer> uris) throws IOException {
 		HashSet<String> triples = new HashSet<String> ();
 
 		IndexRule r = ruleMap.get(ruleNr);
@@ -141,9 +162,13 @@ public class DefaultDecompressor implements DeCompressor{
 						globalModel.getProperty(properties.get(r.getProfile().getProperty())),
 						globalModel.getResource(subjects.get(r.getProfile().getObject())));
 				globalModel.add(statement);
+				System.out.println("Building triple: "+triple);
 				triples.add(triple);
 			}
 			for(Integer parentID : r.getParentIndices()) { //recursion
+				System.out.println("Recursion on "+parentID+" with "+r.getProfile().getSubjects());
+				BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+			    String s = bufferRead.readLine();
 				triples.addAll(buildNTriples(parentID, r.getProfile().getSubjects()));
 			}
 		} else { // build triples from uris from children rules.
@@ -160,11 +185,37 @@ public class DefaultDecompressor implements DeCompressor{
 				}
 			}
 			for(Integer parentID : r.getParentIndices()) { //recursion
+				uris.removeAll(r.deleteGraph);
+				System.out.println("Recursion using delete graph on parent "+parentID+" with Uris");
+				BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+			    String s = bufferRead.readLine();
 				triples.addAll(buildNTriples(parentID, uris));
 			}
 		}
 		return triples;
 	}
+	
+	/**
+	 * Iterates once over all rules and adds all subjects to its parents.
+	 */
+	private void addSubjectsToSuperRules() {
+		for(Entry<Integer, IndexRule> entry : ruleMap.entrySet()) {
+			Set<Integer> subs = entry.getValue().getProfile().getSubjects();
+			if(subs.size()>0) {//for all subjects
+				for(Integer parIndex : entry.getValue().getParentIndices()) {//for each parent
+					IndexRule parent = ruleMap.get(parIndex);
+					Set<Integer> addSubs = new HashSet<Integer>();
+					addSubs.addAll(subs);
+					addSubs.removeAll(parent.deleteGraph);
+					for(Integer s : addSubs) {
+						parent.getProfile().addSubject(s);
+					}
+					System.out.println("Added "+addSubs+" to "+parent);
+				}
+			}
+		}
+	}
+	
 	
 	
 /* ###############################################################
@@ -204,8 +255,9 @@ public class DefaultDecompressor implements DeCompressor{
 			if(line.indexOf("[") != -1)
 				split1 = line.lastIndexOf("[");
 			else
-				if(line.indexOf("(") != -1)
+				if(line.indexOf("(") != -1) {
 					split1 = line.lastIndexOf("(");
+				}
 		}
 		String po = line;
 		String rest = "";
@@ -267,6 +319,7 @@ public class DefaultDecompressor implements DeCompressor{
 		} //rest>0
 		int d = line.indexOf("(");
 		if(d != -1) {
+			hasDeleteRules = true;
 			String del = line.substring(d+1);
 			String[] subjects = del.split("\\|");
 			int offset = 0;
@@ -304,6 +357,7 @@ public class DefaultDecompressor implements DeCompressor{
 //				System.out.println(stmt);
 				System.out.println(stmt.getSubject().getLocalName() + " " + stmt.getPredicate()+" " +stmt.getObject());
 			}
+			
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

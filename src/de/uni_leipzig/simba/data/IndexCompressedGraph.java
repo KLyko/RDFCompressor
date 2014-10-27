@@ -386,7 +386,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
      * @param r
      * @return
      */
-    private HashMap<Integer, RuleToDeleteGraph> computeDeleteBasedRules(IndexRule r, int border)  {
+    protected HashMap<Integer, RuleToDeleteGraph> computeDeleteBasedRules(IndexRule r, int border)  {
     	HashMap<Integer, RuleToDeleteGraph> rules = new HashMap<Integer, RuleToDeleteGraph>();
     	HashSet<Integer> rulesBeneathThreshold = new HashSet();
 
@@ -405,8 +405,7 @@ public class IndexCompressedGraph implements CompressedGraph<IndexRule>{
     	Iterator<Integer> it = subs.iterator();
 		HashSet<Integer> toDelete = new HashSet();
 		HashSet<Integer> subsAlready = new HashSet();
-    	while(it.hasNext()) {
-    		
+    	while(it.hasNext()) {//for each subject
     		Integer s = it.next();
     		subsAlready.add(s);
     		Set<IndexRule> others = subjectToRule.get(s); // rules this s is part of
