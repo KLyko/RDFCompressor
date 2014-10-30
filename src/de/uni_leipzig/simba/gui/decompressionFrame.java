@@ -15,8 +15,7 @@ import javax.swing.JLabel;
 import java.awt.GridLayout;
 import javax.swing.JProgressBar;
 
-import de.uni_leipzig.simba.compress.IndexBasedCompressor;
-import de.uni_leipzig.simba.compress.ModelCompressor;
+import de.uni_leipzig.simba.decompress.DefaultDecompressor;
 import de.uni_leipzig.simba.io.Status;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -26,21 +25,15 @@ import javax.swing.JButton;
 import javax.swing.JTextArea;
 import javax.swing.JScrollPane;
 
-public class compressionFrame extends JFrame implements Observer{
+public class decompressionFrame extends JFrame implements Observer{
 
 	private JPanel contentPane;
 	JLabel lblCompressingFile;
 	JLabel lblAction;
 	JLabel lblStatus;
 	JProgressBar progressBar;
-	JButton btnShowLog ;
-	JTextArea textArea;
-	ModelCompressor compr;
+	DefaultDecompressor decompr;
 	File f;
-	boolean delete = false;
-	int deleteBorder = 0;
-	
-	
 	/**
 	 * Launch the application.
 	 */
@@ -48,7 +41,7 @@ public class compressionFrame extends JFrame implements Observer{
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					compressionFrame frame = new compressionFrame();
+					decompressionFrame frame = new decompressionFrame();
 					
 					frame.setVisible(true);
 					frame.start();
@@ -59,7 +52,7 @@ public class compressionFrame extends JFrame implements Observer{
 		});
 	}
 
-	public compressionFrame() {
+	public decompressionFrame() {
 		this(new File("resources/archive_hub_dump.nt"));
 	}
 	
@@ -67,9 +60,9 @@ public class compressionFrame extends JFrame implements Observer{
 	/**
 	 * Create the frame.
 	 */
-	public compressionFrame(File f) {
+	public decompressionFrame(File f) {
 		this.f = f;
-		setBounds(100, 100, 630, 433);
+		setBounds(100, 100, 630, 233);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
@@ -78,7 +71,7 @@ public class compressionFrame extends JFrame implements Observer{
 		JPanel panelHead = new JPanel();
 		contentPane.add(panelHead, BorderLayout.NORTH);
 		
-		lblCompressingFile = new JLabel("Compressing File "+f.toString());
+		lblCompressingFile = new JLabel("Decompressing File resources\\archive_hub_dump.nt");
 		panelHead.add(lblCompressingFile);
 		
 		JPanel panelCenter = new JPanel();
@@ -88,7 +81,7 @@ public class compressionFrame extends JFrame implements Observer{
 		progressBar = new JProgressBar();
 		progressBar.setBounds(0, 11, 594, 33);
 		progressBar.setStringPainted(true);
-		progressBar.setMaximum(7);
+		progressBar.setMaximum(4);
 		panelCenter.add(progressBar);
 		
 		lblAction = new JLabel("Current Action");
@@ -101,51 +94,17 @@ public class compressionFrame extends JFrame implements Observer{
 		lblStatus.setBounds(0, 48, 583, 33);
 		panelCenter.add(lblStatus);
 		
-		btnShowLog = new JButton("Show Log");
-		btnShowLog.setEnabled(false);
-		btnShowLog.setBounds(0, 120, 89, 23);
-		panelCenter.add(btnShowLog);
 		
-		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(0, 143, 594, 218);
-		panelCenter.add(scrollPane);
-		
-		textArea = new JTextArea();
-		scrollPane.setViewportView(textArea);
-		textArea.setEditable(false);
-		textArea.setEnabled(false);
-		
-		btnShowLog.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				try
-                {
-					textArea.setEnabled(true);
-                    FileReader reader = new FileReader(compr.getLogFile());
-                    BufferedReader br = new BufferedReader(reader);
-                    textArea.read( br, null );
-                    br.close();
-                    textArea.requestFocus();
-                }
-                catch(Exception e2) { System.out.println(e2); }
-			}
-		});
-		
-		
-		compr = new ModelCompressor(f);
-		compr.addObserver(this);
+		decompr = new DefaultDecompressor(f);
+		decompr.addObserver(this);
 	
 	}
 
 	public void start() {
 //		compr = new ModelCompressor(f);
-		Thread thread = new Thread(compr);
-		compr.setFile(f);
-		if(delete)
-			compr.setDelete(deleteBorder);
-		else
-			compr.setDelete(0);
+		Thread thread = new Thread(decompr);
+		//compr.setFile(f);
+		//compr.setDelete(0);
 		thread.start();
 //		compr.compress(f, 0);
 	}
@@ -162,28 +121,12 @@ public class compressionFrame extends JFrame implements Observer{
 		lblStatus.setText(status.getFeedback());
 		lblAction.setText(status.getStatus());
 		
-		if(status.isFinished())
-			btnShowLog.setEnabled(true);
-//		try {
-//			this.wait();
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 	}
 	
 	
 	public void setFile(File f) {
 		this.f = f;
-		compr.setFile(f);
-		lblCompressingFile.setText("Compressing File "+f.toString());
-	}
-	
-	public void setDeleteBorder(int border) {
-		if(border > 0) {
-			this.deleteBorder = border;
-			this.delete = true;
-		}
-		
+		//compr.setFile(f);
+		lblCompressingFile.setText("Decompressing File "+f.toString());
 	}
 }

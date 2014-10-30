@@ -47,6 +47,10 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 	/**Used to seperate subject delete list from rest of rule*/
 	public static final String DEL_SUB = "(";
 	
+	
+	public static final String ruleFileName = "rules.cp";
+	public static final String valueModelFileName = "valueModel.ttl"; 
+	
 	int nrOfSingleSubs = 0;
 	int nrOfAtomicRules = 0;
 	int nrOfDeleteRules = 0;

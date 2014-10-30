@@ -2,24 +2,30 @@ package de.uni_leipzig.simba.decompress;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Observable;
 import java.util.Set;
 
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.apache.commons.compress.utils.IOUtils;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
@@ -29,12 +35,15 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 
+import de.uni_leipzig.simba.compress.BasicCompressor;
 import de.uni_leipzig.simba.compress.IndexBasedCompressor;
 import de.uni_leipzig.simba.data.IndexProfile;
 import de.uni_leipzig.simba.data.IndexRule;
 import de.uni_leipzig.simba.io.ModelLoader;
+import de.uni_leipzig.simba.io.ObserverFeedback;
+import de.uni_leipzig.simba.io.Status;
 
-public class DefaultDecompressor implements DeCompressor{
+public class DefaultDecompressor extends Observable implements DeCompressor, Runnable{
 	
 	boolean hasDeleteRules = false;
 	
@@ -44,15 +53,37 @@ public class DefaultDecompressor implements DeCompressor{
 	
 	HashMap<Integer, IndexRule> ruleMap = new HashMap<Integer, IndexRule>();
 	
-
+	File file;
+	public Status status;
+	public ObserverFeedback feedback;
+	
 	Model globalModel = ModelFactory.createDefaultModel();
 	
+	public DefaultDecompressor(File input) {
+		this.file = input;
+		feedback = new ObserverFeedback();
+ 		feedback.currentStatus = status;
+	}
+	
 	@Override
-	public Model decompress(File file) throws IOException, CompressorException {
-
+	public void run() {
+		try{
+			decompress(this.file);
+		}
+		catch (Exception e){
+			System.out.println(e);
+		}
+	}
+	
+	@Override
+	public Model decompress(File file) throws IOException, CompressorException, ArchiveException {
+		status = new Status("Begin decompression", 0, 3);
+		Map<String, File> fileMap = unTar(file, new File(file.getParent()));
+		BufferedReader br = getBufferedReaderForRuleFile(fileMap.get(BasicCompressor.ruleFileName));
 		
-		BufferedWriter bw = new BufferedWriter(new FileWriter("tmp.n3", false));
-		BufferedReader br = getBufferedReaderForBZ2File(file.getAbsolutePath());
+		setChanged();
+		status.update("Initialized", "Parsing file");
+ 		notifyObservers(status);
 		
 		String line;
 		int stage = 0;
@@ -69,7 +100,6 @@ public class DefaultDecompressor implements DeCompressor{
 				 	case 1: parseSubjects(line);break;
 				 	case 2: parseProperties(line);break;
 				 	case 3: lastProp = parseRule(line, lastProp, ruleNr); ruleNr++;break;
-				 	case 4: bw.write(line); bw.newLine(); break;
 				 }
 			 }
 		 }
@@ -80,23 +110,32 @@ public class DefaultDecompressor implements DeCompressor{
 //		 
 		 ArrayList<String> triples = new ArrayList<String>(22);
 		 
-		 if(!hasDeleteRules) {
-			 for(Integer rNr : ruleMap.keySet()) {
-					
-				 Set<String> nts = buildNTriples(rNr, new HashSet<Integer>());
-//				 System.out.println("Building rule nr "+rNr+": "+nts);
-				
-				 triples.addAll(nts);
-			 }
-			 Collections.sort(triples);
-			 for(String s : triples) {
-//				 String tr = s.
-//				 globalModel.createStatement(globalModel.getResource(uri), p, o)
-				 System.out.println(s);
-			 }
-			
-			System.out.println("\n\nNr of triples: "+triples.size());
-		 } else {
+		setChanged();
+		status.update("File successfully parsed", "Building triples");
+	 	notifyObservers(status);
+		if(!hasDeleteRules) {
+			int count = 0;
+			int[] perc = new int[10];
+			for(int i = 0; i<10;i++) {
+				perc[i] = (int) (ruleMap.size() * (0.1*i));
+				System.out.println(10*(i+1)+"% := "+perc[i]);
+			}
+			int percID = 0;
+//			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+//		    String s = bufferRead.readLine();
+		 for(Integer rNr : ruleMap.keySet()) {
+			 count++;
+			 Set<String> nts = buildNTriples(rNr, new HashSet<Integer>(), new HashSet<Integer>());
+			 triples.addAll(nts);
+//			 if(perc[percID] == count) {
+//				percID++;
+//				System.out.println("Finished building  "+(10*percID)+"%, that is "+perc[percID-1]+" of all "+ruleMap.size()+"  rules. Continue?");
+////				bufferRead = new BufferedReader(new InputStreamReader(System.in));
+////			    s = bufferRead.readLine();
+//			 }
+			 System.out.println("\n\nNr of triples: "+triples.size());
+		 }
+		} else {
 			 System.out.println("Model has delete rules");
 			 for(Entry<Integer, IndexRule> entry : ruleMap.entrySet()) {
 				 System.out.println(entry.getValue() + "Par:\t" +entry.getValue().getParentIndices()+ "\tdel: "+entry.getValue().deleteGraph);
@@ -107,23 +146,24 @@ public class DefaultDecompressor implements DeCompressor{
 			 }
 //			 for(Integer rNr : ruleMap.keySet()) {
 					
-				 Set<String> nts = buildNTriples(0, new HashSet<Integer>());
+				 Set<String> nts = buildNTriples(0, new HashSet<Integer>(), new HashSet<Integer>());
 //				 System.out.println("Building rule nr "+rNr+": "+nts);
 				
 				 triples.addAll(nts);
-//			 }
-		 }
+		}
+		System.out.println("\n\nNr of triples: "+triples.size());
 
 		
 		
 		/*############################################### VALUE MODEL  ####################################*/
 		System.out.println("Reading valueModel");
-		
-		bw.close();
-		
+		setChanged();
+		status.update("Triples successfully built", "Reading value model");
+ 		notifyObservers(status);		
 		
 		Model valueModel = ModelFactory.createDefaultModel();
-		valueModel = ModelLoader.getModel("tmp.n3");
+		if(fileMap.containsKey(BasicCompressor.valueModelFileName))
+			valueModel = ModelLoader.getModel(fileMap.get(BasicCompressor.valueModelFileName).getAbsolutePath());
 		StmtIterator it = valueModel.listStatements();
 		while(it.hasNext()) {
 			Statement stmt = it.next();
@@ -134,24 +174,38 @@ public class DefaultDecompressor implements DeCompressor{
 			Property prop = globalModel.getProperty(properties.get(Integer.parseInt(p)));
 			Statement statement = globalModel.createLiteralStatement(subj, prop, o.asLiteral());
 			globalModel.add(statement);
-//			System.out.println("Read Stmt: " + subj+ " " + prop +" "+o);
+			System.out.println("Read Stmt: " + subj+ " " + prop +" "+o);
 		}
 		
-		
+		setChanged();
+		status.setFinished();
+		status.update("Successfully decompressed " + triples.size() + " triples!", "");
+ 		notifyObservers(status);
+// 		Collections.sort(triples);
+ 		for(String s : triples) {
+ 			System.out.println(s);
+ 		}
+ 		StmtIterator stmtIt = globalModel.listStatements();
+ 		while(stmtIt.hasNext()) {
+ 			
+ 			System.out.println(stmtIt.next().asTriple());
+ 		}
 		return globalModel;
 	}
 
 	/**
-	 * 
-	 * @param ruleNr
-	 * @param init
-	 * @param uris
+	 * Builds the RDF Model once all Rules are read.
+	 * @param ruleNr current Rule to extract
+	 * @param uris Set of Integers of children rules pointing to Rule ruleNr
+	 * @param vistitedParentNodes Set of already vistited parents to avoid circles: neccessary for rules with delete graph
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
 	 */
-	private Set<String> buildNTriples(int ruleNr, Set<Integer> uris) throws IOException {
+	private Set<String> buildNTriples(int ruleNr, Set<Integer> uris, Set<Integer> vistitedParentNodes) throws IOException {
 		HashSet<String> triples = new HashSet<String> ();
-
+		if(vistitedParentNodes.contains(ruleNr))
+			return triples;
+		vistitedParentNodes.add(ruleNr);
 		IndexRule r = ruleMap.get(ruleNr);
 		if(uris.isEmpty()) {
 			for(Integer sID : r.getProfile().getSubjects()) {
@@ -162,14 +216,14 @@ public class DefaultDecompressor implements DeCompressor{
 						globalModel.getProperty(properties.get(r.getProfile().getProperty())),
 						globalModel.getResource(subjects.get(r.getProfile().getObject())));
 				globalModel.add(statement);
-				System.out.println("Building triple: "+triple);
+//				System.out.println("Building triple: "+triple);
 				triples.add(triple);
 			}
 			for(Integer parentID : r.getParentIndices()) { //recursion
 				System.out.println("Recursion on "+parentID+" with "+r.getProfile().getSubjects());
 				BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
 			    String s = bufferRead.readLine();
-				triples.addAll(buildNTriples(parentID, r.getProfile().getSubjects()));
+				triples.addAll(buildNTriples(parentID, r.getProfile().getSubjects(), vistitedParentNodes));
 			}
 		} else { // build triples from uris from children rules.
 			for(Integer sID : uris) {
@@ -184,13 +238,15 @@ public class DefaultDecompressor implements DeCompressor{
 					triples.add(triple);
 				}
 			}
-			for(Integer parentID : r.getParentIndices()) { //recursion
-				uris.removeAll(r.deleteGraph);
-				System.out.println("Recursion using delete graph on parent "+parentID+" with Uris");
-				BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-			    String s = bufferRead.readLine();
-				triples.addAll(buildNTriples(parentID, uris));
-			}
+			uris.removeAll(r.deleteGraph);
+			if(uris.size()>0)
+				for(Integer parentID : r.getParentIndices()) { //recursion
+	//				uris.removeAll(r.deleteGraph);
+					System.out.println("Recursion using delete graph on parent "+parentID+" with Uris "+uris);
+					BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+				    String s = bufferRead.readLine();
+					triples.addAll(buildNTriples(parentID, uris, vistitedParentNodes));
+				}
 		}
 		return triples;
 	}
@@ -332,19 +388,20 @@ public class DefaultDecompressor implements DeCompressor{
 		return propNr;		
 	}
 	
-	public static BufferedReader getBufferedReaderForBZ2File(String fileIn) throws FileNotFoundException, CompressorException {
+	public static BufferedReader getBufferedReaderForRuleFile(File fileIn) throws FileNotFoundException, CompressorException {
 	    FileInputStream fin = new FileInputStream(fileIn);
-	    BufferedInputStream bis = new BufferedInputStream(fin);
-	    CompressorInputStream input = new CompressorStreamFactory().createCompressorInputStream("bzip2", bis);
-	    BufferedReader br2 = new BufferedReader(new InputStreamReader(input));
-
+	    BufferedReader br2 = new BufferedReader(new InputStreamReader(fin));
 	    return br2;
 	}
 	
-	
-	public static void main(String args[]) {
+	public static void main(String args[]) throws FileNotFoundException, IOException, ArchiveException, CompressorException {
 		File file = new File("resources/dummy_data2.nt.cp.bz2");
-		DefaultDecompressor decmpr = new DefaultDecompressor();
+		Map<String, File> files = unTar(new File("resources/archive_hub_dump.nt.cp.tar.bz2"), new File("resources/"));
+		for(Entry<String, File> e : files.entrySet()) {
+			System.out.println("File: "+e.getKey()+" => "+e.getValue().getAbsolutePath());
+		}
+		System.exit(1);
+		DefaultDecompressor decmpr = new DefaultDecompressor(file);
 		try {
 			Model glob = decmpr.decompress(file);
 			Map<String,String> map = glob.getNsPrefixMap();
@@ -367,6 +424,48 @@ public class DefaultDecompressor implements DeCompressor{
 			e.printStackTrace();
 		}
 	}
+	
+	/** Untar an input file into an output file.
+
+	 * The output file is created in the output folder, having the same name
+	 * as the input file, minus the '.tar' extension. 
+	 * 
+	 * @param inputFile     the input .tar file
+	 * @param outputDir     the output directory file. 
+	 * @throws IOException 
+	 * @throws FileNotFoundException
+	 *  
+	 * @return  The {@link List} of {@link File}s with the untared content.
+	 * @throws ArchiveException 
+	 * @throws CompressorException 
+	 */
+	private static Map<String, File> unTar(final File inputFile, final File outputDir) throws FileNotFoundException, IOException, ArchiveException, CompressorException {
+		Map<String, File> fileMap = new HashMap<String, File>();
+	    FileInputStream fin = new FileInputStream(inputFile);
+	    BufferedInputStream bis = new BufferedInputStream(fin);
+	    CompressorInputStream input = new CompressorStreamFactory().createCompressorInputStream("bzip2", bis);
+	  
+	    final TarArchiveInputStream debInputStream = (TarArchiveInputStream) new ArchiveStreamFactory().createArchiveInputStream("tar", input);
+	    TarArchiveEntry entry = null; 
+	    while ((entry = (TarArchiveEntry)debInputStream.getNextEntry()) != null) {
+	        final File outputFile = new File(outputDir, entry.getName());
+	        if (entry.isDirectory()) {
+	            if (!outputFile.exists()) {
+	              if (!outputFile.mkdirs()) {
+	                    throw new IllegalStateException(String.format("Couldn't create directory %s.", outputFile.getAbsolutePath()));
+	                }
+	            }
+	        } else {
+	            final OutputStream outputFileStream = new FileOutputStream(outputFile, false); 
+	            IOUtils.copy(debInputStream, outputFileStream);
+	            outputFileStream.close();
+	        }
+	        fileMap.put(entry.getName(), outputFile);
+	    }
+	    debInputStream.close(); 
+	    return fileMap;
+	}
+	
 	
 
 }

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
 
 import com.hp.hpl.jena.rdf.model.Model;
@@ -17,5 +18,5 @@ import com.hp.hpl.jena.rdf.model.Model;
  */
 public interface DeCompressor {
 
-	public Model decompress(File file) throws FileNotFoundException, IOException, CompressorException;
+	public Model decompress(File file) throws FileNotFoundException, IOException, CompressorException, ArchiveException;
 }

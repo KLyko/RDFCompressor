@@ -1,6 +1,7 @@
 package de.uni_leipzig.simba.compress;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -13,6 +14,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
 import com.hp.hpl.jena.query.QueryExecution;
@@ -150,6 +153,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 			String uri = "";
 			if(p.isURIResource()) {
 				uri= p.getURI();
+				
 //				if(model.shortForm(uri).length() == uri.length()) {
 //					String[] pref = PrefixHelper.generatePrefix(uri);
 //					System.out.println("Created prefix for "+uri+":\n"+pref[0]+" -> "+pref[1]);
@@ -157,7 +161,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 //				}
 				uri = model.shortForm(uri);
 			}else {
-				uri = p.getId().toString();
+				uri = "_:"+p.getId().toString();
 				System.out.println("Created anon property id "+uri+" anon: "+p.getId().getLabelString());
 			}
 			int indexP = this.addIndex(uri, SPO.PREDICATE);
@@ -182,7 +186,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 						uri = model.shortForm(uri);
 					}// o_node is resource and has URI
 					else {
-						uri = o_res.getId().toString();
+						uri = "_:"+o_res.getId().toString();
 						System.out.println("Created obj AnonID: "+uri+" anon.label: "+o_res.getId().getLabelString());						
 					}
 					
@@ -202,8 +206,8 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 								}catch(Exception e) {}	
 							}
 							uri = model.shortForm(uri);
-						} else {
-							uri = s.getId().toString();
+						} else {//is blank node
+							uri = "_:"+s.getId().toString();
 							System.out.println("Created AnonID for s: "+uri+" anon.label: "+s.getId().getLabelString());
 						}
 						profile.addSubject(addIndex(uri, SPO.SUBJECT));
@@ -235,8 +239,8 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 								}catch(Exception e) {}	
 							}
 							uri = model.shortForm(uri);
-						} else {
-							uri = r.getId().toString();
+						} else { // is blank node
+							uri = "_:"+r.getId().toString();
 							System.out.println("Created AnonID for s_val: "+uri+" anon.label: "+r.getId().getLabelString());
 						}
 						
@@ -293,8 +297,9 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
  		notifyObservers(status);
  		middle = System.currentTimeMillis();
  		/*############## writing tar file ############################*/
+ 		File outFile=null;
  		try{
-			writeSingleTarFile(input, ruleGraph);			   
+ 			outFile=writeBZip2TarFile(input, ruleGraph);			   
 		}
 		catch (IOException ioe){
 			ioe.printStackTrace();
@@ -312,7 +317,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
  		print = "Overall : " + (System.currentTimeMillis()-start) + " milli seconds = " + (System.currentTimeMillis()-start)/1000 +" seconds";
 		System.out.println(print);
 		writeLogFile(input, print, true);
-		File outFile = new File(input.getAbsolutePath()+ logExt + ".cp.bz2");
+		
 		long byteLength = outFile.length();
 		
 		int nrOfRules = ruleGraph.getRules().size();
@@ -349,129 +354,6 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 			
 	}
 
-	private void writeSingleTarFile(File input2, IndexCompressedGraph ruleGraph) throws IOException{
-		OutputStream fos = new BufferedOutputStream(new FileOutputStream(input.getAbsolutePath() +logFileSuffix+".cp.bz2"));
-        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
-		    //Prefixes
-//		    outputStream.write("\n".getBytes());
-		    for (Entry<String, String>  entry : model.getNsPrefixMap().entrySet()) {
-		    	outputStream.write( entry.getKey().getBytes());
-		    	outputStream.write( LIST_SEP.getBytes());
-		    	outputStream.write( entry.getValue().getBytes());
-		    	outputStream.write( "\n".getBytes());
-		    }
-		    //Subject Map
-		    outputStream.write((FILE_SEP+"\n").getBytes());
-		    // new nr => get old
-		    int nrOfSubjects = resortSubjectList.size();
-//		    int nrOfObjects = resortObjectList.size();
-//		    for(int ind = 0; ind < Math.max(nrOfSubjects, nrOfObjects); ind++) {
-		    for(int ind = 0; ind < nrOfSubjects; ind++) {
-//		    	outputStream.write((""+ind).getBytes());
-//		    	outputStream.write( "|".getBytes());
-		    	if(ind < nrOfSubjects)
-		    		outputStream.write(indexToSubjectMap.get(resortSubjectList.get(ind).nr).getBytes());
-//		    	if(ind < nrOfObjects)
-//		    		outputStream.write("\2".getBytes());
-//		    	if(ind < nrOfObjects)
-//		    		outputStream.write(indexToObjectMap.get(resortObjectList.get(ind).nr).getBytes());	
-		    	outputStream.write( "\n".getBytes());
-		    }
-
-		    outputStream.write((FILE_SEP+"\n").getBytes());
-		    //Property Map
-		    for(int ind = 0; ind < propertyList.size(); ind++) {
-		    	outputStream.write(propertyList.get(ind).getBytes());
-		    	outputStream.write("\n".getBytes());
-		    }
-		    
-//		    for (Entry<String, Integer> property : this.propertyMap.entrySet()) {
-//		    	outputStream.write( property.getKey().getBytes());
-//		    	outputStream.write( "|".getBytes());
-//		    	outputStream.write( property.getValue().toString().getBytes());
-//		    	outputStream.write( "\n".getBytes());
-//		    }
-		    // Rules
-		    outputStream.write((FILE_SEP+"\n").getBytes());
-		    Integer prevProperty = -1;
-		    
-		    for(IndexRule rule : ruleGraph.getRules()) {
-		    	if(rule.isAtomic())
-		    		nrOfAtomicRules++;
-			    IndexProfile profile = rule.getProfile();
-			    bloomErrorRate+=profile.errorRate;
-				//outputStream.write(Integer.toString(rule.getNumber()).getBytes());
-				//outputStream.write(":".getBytes());
-			    if(prevProperty != profile.getProperty()) {
-					outputStream.write(profile.getProperty().toString().getBytes());
-					outputStream.write(PROP_OBJ_SEP.getBytes());
-			    }
-//				outputStream.write(objIndexMap.get(profile.getObject()).toString().getBytes());
-			    outputStream.write(subIndexMap.get(profile.getObject()).toString().getBytes());
-				Iterator ruleIter = profile.getSubjects().iterator();
-				int offset = 0;
-				prevProperty = profile.getProperty();
-				if(profile.size()>0) {
-					outputStream.write(PO_SUBJ_SEP.getBytes());
-			
-					List<Integer> subjects = new LinkedList();
-					for(Integer i : profile.getSubjects()) {
-						subjects.add(subIndexMap.get(i));
-					}
-					Collections.sort(subjects);
-				
-					for(int i=0; i<subjects.size();i++) {
-						int val = subjects.get(i);
-						outputStream.write(Integer.toString(val-offset).getBytes());
-						offset = val;
-						if (i<subjects.size()-1){
-						    outputStream.write(LIST_SEP.getBytes());
-						}
-					}// for each subject
-				}// if rule has subjects
-				if(rule.getParents().size()>0) {
-					nrOfParents++;
-					outputStream.write(SUBJ_SUPERRULE_SEP.getBytes());
-					offset = 0;
-					ruleIter = rule.getParents().iterator();
-					while (ruleIter.hasNext()){
-						IRule sr = (IRule) ruleIter.next();
-					    outputStream.write(Integer.toString(sr.getNumber()-offset).getBytes());
-					    offset= sr.getNumber();
-					    if (ruleIter.hasNext()){
-					    	outputStream.write(LIST_SEP.getBytes());
-					    }
-					}// for each parent
-				}// end if rule has parents
-				if(rule.deleteGraph.size()>0) {
-					nrOfDeleteRules++;
-					outputStream.write(DEL_SUB.getBytes());
-					List<Integer> deleteSubjects = new LinkedList();
-					sizeOfDeleteEntries += rule.deleteGraph.size();
-					for(Integer i : rule.deleteGraph) {
-						deleteSubjects.add(subIndexMap.get(i));
-					}
-					Collections.sort(deleteSubjects);
-					offset = 0;
-					for(int i=0; i<deleteSubjects.size();i++) {
-						int val = deleteSubjects.get(i);
-						outputStream.write(Integer.toString(val-offset).getBytes());
-						offset = val;
-						if (i<deleteSubjects.size()-1){
-						    outputStream.write(LIST_SEP.getBytes());
-						}
-					}// for each subject
-				}// if rule has parents
-				
-				outputStream.write("\n".getBytes());
-		    }// foreach rule
-		    // value model
-		    outputStream.write((FILE_SEP+"\n").getBytes());
-		    Model finalValueModel = createFinalValueModel();
-		    finalValueModel.write(outputStream, "TURTLE");
-		    outputStream.close();
-           fos.close();
-	}
 	
 	
 	private Model createFinalValueModel() {
@@ -498,6 +380,186 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 		ModelCompressor compr = new ModelCompressor(file);
 		compr.setLogFileSuffix("combined");
 		compr.compress();
+	}
+	
+	private OutputStream writeRulesToOutputStream(OutputStream outputStream, IndexCompressedGraph ruleGraph) throws IOException {
+	    //Prefixes
+//	    outputStream.write("\n".getBytes());
+
+	    for (Entry<String, String>  entry : model.getNsPrefixMap().entrySet()) {
+	    	outputStream.write( entry.getKey().getBytes());
+	    	outputStream.write( LIST_SEP.getBytes());
+	    	outputStream.write( entry.getValue().getBytes());
+	    	outputStream.write( "\n".getBytes());
+	    }
+	    //Subject Map
+	    outputStream.write((FILE_SEP+"\n").getBytes());
+	    // new nr => get old
+	    int nrOfSubjects = resortSubjectList.size();
+//	    int nrOfObjects = resortObjectList.size();
+//	    for(int ind = 0; ind < Math.max(nrOfSubjects, nrOfObjects); ind++) {
+	    for(int ind = 0; ind < nrOfSubjects; ind++) {
+//	    	outputStream.write((""+ind).getBytes());
+//	    	outputStream.write( "|".getBytes());
+	    	if(ind < nrOfSubjects)
+	    		outputStream.write(indexToSubjectMap.get(resortSubjectList.get(ind).nr).getBytes());
+//	    	if(ind < nrOfObjects)
+//	    		outputStream.write("\2".getBytes());
+//	    	if(ind < nrOfObjects)
+//	    		outputStream.write(indexToObjectMap.get(resortObjectList.get(ind).nr).getBytes());	
+	    	outputStream.write( "\n".getBytes());
+	    }
+
+	    outputStream.write((FILE_SEP+"\n").getBytes());
+	    //Property Map
+	    for(int ind = 0; ind < propertyList.size(); ind++) {
+	    	outputStream.write(propertyList.get(ind).getBytes());
+	    	outputStream.write("\n".getBytes());
+	    }
+	    
+//	    for (Entry<String, Integer> property : this.propertyMap.entrySet()) {
+//	    	outputStream.write( property.getKey().getBytes());
+//	    	outputStream.write( "|".getBytes());
+//	    	outputStream.write( property.getValue().toString().getBytes());
+//	    	outputStream.write( "\n".getBytes());
+//	    }
+	    // Rules
+	    outputStream.write((FILE_SEP+"\n").getBytes());
+	    Integer prevProperty = -1;
+	    
+	    for(IndexRule rule : ruleGraph.getRules()) {
+	    	if(rule.isAtomic())
+	    		nrOfAtomicRules++;
+		    IndexProfile profile = rule.getProfile();
+		    bloomErrorRate+=profile.errorRate;
+			//outputStream.write(Integer.toString(rule.getNumber()).getBytes());
+			//outputStream.write(":".getBytes());
+		    if(prevProperty != profile.getProperty()) {
+				outputStream.write(profile.getProperty().toString().getBytes());
+				outputStream.write(PROP_OBJ_SEP.getBytes());
+		    }
+//			outputStream.write(objIndexMap.get(profile.getObject()).toString().getBytes());
+		    outputStream.write(subIndexMap.get(profile.getObject()).toString().getBytes());
+			Iterator ruleIter = profile.getSubjects().iterator();
+			int offset = 0;
+			prevProperty = profile.getProperty();
+			if(profile.size()>0) {
+				outputStream.write(PO_SUBJ_SEP.getBytes());
+		
+				List<Integer> subjects = new LinkedList();
+				for(Integer i : profile.getSubjects()) {
+					subjects.add(subIndexMap.get(i));
+				}
+				Collections.sort(subjects);
+			
+				for(int i=0; i<subjects.size();i++) {
+					int val = subjects.get(i);
+					outputStream.write(Integer.toString(val-offset).getBytes());
+					offset = val;
+					if (i<subjects.size()-1){
+					    outputStream.write(LIST_SEP.getBytes());
+					}
+				}// for each subject
+			}// if rule has subjects
+			if(rule.getParents().size()>0) {
+				nrOfParents++;
+				outputStream.write(SUBJ_SUPERRULE_SEP.getBytes());
+				offset = 0;
+				ruleIter = rule.getParents().iterator();
+				while (ruleIter.hasNext()){
+					IRule sr = (IRule) ruleIter.next();
+				    outputStream.write(Integer.toString(sr.getNumber()-offset).getBytes());
+				    offset= sr.getNumber();
+				    if (ruleIter.hasNext()){
+				    	outputStream.write(LIST_SEP.getBytes());
+				    }
+				}// for each parent
+			}// end if rule has parents
+			if(rule.deleteGraph.size()>0) {
+				nrOfDeleteRules++;
+				outputStream.write(DEL_SUB.getBytes());
+				List<Integer> deleteSubjects = new LinkedList();
+				sizeOfDeleteEntries += rule.deleteGraph.size();
+				for(Integer i : rule.deleteGraph) {
+					deleteSubjects.add(subIndexMap.get(i));
+				}
+				Collections.sort(deleteSubjects);
+				offset = 0;
+				for(int i=0; i<deleteSubjects.size();i++) {
+					int val = deleteSubjects.get(i);
+					outputStream.write(Integer.toString(val-offset).getBytes());
+					offset = val;
+					if (i<deleteSubjects.size()-1){
+					    outputStream.write(LIST_SEP.getBytes());
+					}
+				}// for each subject
+			}// if rule has parents
+			
+			outputStream.write("\n".getBytes());
+	    }// foreach rule
+	    return outputStream;
+	}
+
+	/**
+	 * Writes single Tar Entries 
+	 * @param input
+	 * @param ruleGraph
+	 * @return
+	 * @throws IOException
+	 */
+	private File writeBZip2TarFile(File input, IndexCompressedGraph ruleGraph) throws IOException {
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+		File file = new File(input.getAbsolutePath() +logFileSuffix+ ".cp.tar.bz2");
+		OutputStream os = new FileOutputStream(file, true);
+		OutputStream bzos = new BZip2CompressorOutputStream(os);
+		TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
+		//Write rules to output stream
+		writeRulesToOutputStream(outputStream, ruleGraph);
+		byte[] allRules = outputStream.toByteArray();
+		TarArchiveEntry ruleEntry = new TarArchiveEntry(ruleFileName);
+		ruleEntry.setSize(allRules.length);
+		aos.putArchiveEntry(ruleEntry);
+		aos.write(allRules);
+		aos.closeArchiveEntry();
+		//---------------------------- --------------------------- -------------------
+		outputStream = new ByteArrayOutputStream( );
+		Model finalValueModel = createFinalValueModel();
+		if(finalValueModel.size()>0) {
+			finalValueModel.write(outputStream, "TURTLE");
+			byte[] turtle = outputStream.toByteArray();
+			TarArchiveEntry turtleEntry = new TarArchiveEntry(valueModelFileName);
+			turtleEntry.setSize(turtle.length);
+			aos.putArchiveEntry(turtleEntry);
+			aos.write(turtle);
+			aos.closeArchiveEntry();
+		}	
+		aos.finish();
+		aos.close();
+		bzos.close();
+		os.close();
+		return file;
+		}
+	/**
+	 * Old method concatenates all in one bzip2 file
+	 * @param input2
+	 * @param ruleGraph
+	 * @throws IOException
+	 */
+	@Deprecated
+	private File writeSingleBzip2File(File input2, IndexCompressedGraph ruleGraph) throws IOException{
+		File file = new File(input.getAbsolutePath() +logFileSuffix+".cp.bz2");
+		OutputStream fos = new BufferedOutputStream(new FileOutputStream(file, true));
+        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
+        writeRulesToOutputStream(outputStream, ruleGraph);
+  
+		Model finalValueModel = createFinalValueModel();
+	    if(finalValueModel.size()>0) {
+	  		outputStream.write((FILE_SEP+"\n").getBytes());
+	  		finalValueModel.write(outputStream, "TURTLE");
+		}
+		outputStream.close();
+        fos.close();
+        return file;
 	}
 	
 }
