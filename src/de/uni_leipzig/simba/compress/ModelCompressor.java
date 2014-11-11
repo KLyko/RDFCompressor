@@ -1,6 +1,5 @@
 package de.uni_leipzig.simba.compress;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -42,7 +41,6 @@ import de.uni_leipzig.simba.data.IndexProfile;
 import de.uni_leipzig.simba.data.IndexRule;
 import de.uni_leipzig.simba.data.InstantCompressedGraph;
 import de.uni_leipzig.simba.io.ModelLoader;
-import de.uni_leipzig.simba.io.ObserverFeedback;
 import de.uni_leipzig.simba.util.PrefixHelper;
 
 /**
@@ -51,7 +49,7 @@ import de.uni_leipzig.simba.util.PrefixHelper;
  * 	1. querying the RDF model for all properties
  * 	2. get all objects which are RDF resources
  * 	3. for each of this p-o pair get all subjects
- * Threreby, we can construct the complete rules at once:
+ * Thus, we can construct the complete rules at once:
  * Don't have to check if a rule already exists. And also all rules are already sorted by property. 
  * No empty, or redundant rules exist. Thereby, we can significantly limit the complexity.
  * 
@@ -355,6 +353,8 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 			log+="\nNr of atomic rules="+nrOfAtomicRules+"; Nr of parents="+nrOfParents+"; Nr of Delete Rules "+nrOfDeleteRules+"; Size of delete entries="+sizeOfDeleteEntries;
 		writeLogFile(input, log, true);
 			log ="\nNumber of falsePositive bloom uri checks = "+bloomErrorRate;
+
+			log+="\n Durations RuleCreation="+sumRuleCreation+", sumValueModelCreation="+sumValueModelCreation;
 			
 		writeLogFile(input, log, true);
 		if(System.getProperty("user.name").equalsIgnoreCase("lyko")) 
@@ -459,7 +459,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 			if(profile.size()>0) {
 				outputStream.write(PO_SUBJ_SEP.getBytes());
 		
-				List<Integer> subjects = new LinkedList();
+				List<Integer> subjects = new LinkedList<Integer>();
 				for(Integer i : profile.getSubjects()) {
 					subjects.add(subIndexMap.get(i));
 				}
@@ -491,7 +491,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 			if(rule.deleteGraph.size()>0) {
 				nrOfDeleteRules++;
 				outputStream.write(DEL_SUB.getBytes());
-				List<Integer> deleteSubjects = new LinkedList();
+				List<Integer> deleteSubjects = new LinkedList<Integer>();
 				sizeOfDeleteEntries += rule.deleteGraph.size();
 				for(Integer i : rule.deleteGraph) {
 					deleteSubjects.add(subIndexMap.get(i));

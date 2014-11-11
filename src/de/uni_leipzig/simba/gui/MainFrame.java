@@ -1,17 +1,12 @@
 package de.uni_leipzig.simba.gui;
 
-import java.awt.BorderLayout;
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
-import javax.swing.JScrollPane;
 import javax.swing.JFileChooser;
-import javax.swing.GroupLayout;
-import javax.swing.GroupLayout.Alignment;
-import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 
@@ -19,7 +14,6 @@ import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import javax.swing.JButton;
-import javax.swing.BoxLayout;
 import java.awt.GridLayout;
 import javax.swing.border.MatteBorder;
 import java.awt.Color;
@@ -29,7 +23,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import javax.swing.border.TitledBorder;
-
+/**
+ * Main Frame of SCAROs GUI.
+ * @author Klaus Lyko
+ *
+ */
 public class MainFrame extends JFrame {
 
 	private JPanel contentPane;
