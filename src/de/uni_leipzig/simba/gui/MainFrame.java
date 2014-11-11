@@ -8,6 +8,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
 import javax.swing.JFileChooser;
 import javax.swing.JTextField;
+import javax.swing.SpinnerModel;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
 
 import java.awt.GridBagLayout;
@@ -35,6 +37,7 @@ public class MainFrame extends JFrame {
 	private JButton btnStartDecompression;
 	private JButton btnStartCompression;
 	private JSpinner spinner;
+	JCheckBox chckbxHDT;
 	JCheckBox chckbxActivateDeleteRules;
 	private File fileToCompress;
 	compressionFrame cframe;
@@ -147,12 +150,27 @@ public class MainFrame extends JFrame {
 		propertyPanel.setLayout(null);
 		
 		chckbxActivateDeleteRules = new JCheckBox("activate Delete Rules");
+		chckbxActivateDeleteRules.setToolTipText("If checked compression is performed with delete subjects for rules.");
 		chckbxActivateDeleteRules.setBounds(5, 15, 127, 23);
 		propertyPanel.add(chckbxActivateDeleteRules);
 		
+		SpinnerModel model =
+		        new SpinnerNumberModel(0, //initial value
+		                               0, //min
+		                               50, //max
+		                               1); //steps
+		
 		spinner = new JSpinner();
+		spinner.setToolTipText("Specify the maximal number of delete subjects for rules.");
+		spinner.setModel(model);
 		spinner.setBounds(135, 15, 29, 20);
 		propertyPanel.add(spinner);
+		
+		chckbxHDT = new JCheckBox("HDT");
+		chckbxHDT.setToolTipText("If set SCARO will serialize the value model using HDT. Otherwise the value model is serialized in the N3 format.");
+		chckbxHDT.setSelected(true);
+		chckbxHDT.setBounds(6, 36, 97, 23);
+		propertyPanel.add(chckbxHDT);
 		
 		JPanel southPanel = new JPanel();
 		GridBagConstraints gbc_southPanel = new GridBagConstraints();
@@ -186,7 +204,16 @@ public class MainFrame extends JFrame {
 		cframe = new compressionFrame(fileToCompress);
 		cframe.setVisible(true);
 		cframe.setFile(fileToCompress);
-//		cframe.setAlwaysOnTop(true),
+		if(chckbxActivateDeleteRules.isSelected()) {
+			int del = (Integer)spinner.getValue();
+			cframe.delete = true;
+			cframe.deleteBorder = del;
+		}
+		if(chckbxHDT.isSelected()) {
+			cframe.hdt = true;
+		} else {
+			cframe.hdt = false;
+		}
 		cframe.start();
 	}
 	

@@ -118,7 +118,7 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 	    	}
 		} else { //compute delete rule
 			for(IndexRule r : rules) { 
-//    			if(r.getProfile().subjects.size()>1) {
+    			if(r.getProfile().subjects.size()>1) {
     				HashMap<Integer, RuleToDeleteGraph> dels = computeDeleteBasedRules(r, this.deleteBorder);
     				for(Entry<Integer, RuleToDeleteGraph> entry : dels.entrySet()) {
     					IndexRule parent = rules.get(entry.getKey());
@@ -130,7 +130,7 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
 	    					r.addParent(parent);
     					}
     				}
-//    			}
+    			}
 			}
 			
 		}

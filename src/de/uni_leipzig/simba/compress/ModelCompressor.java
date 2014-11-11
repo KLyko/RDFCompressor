@@ -138,12 +138,12 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
  		while(rs.hasNext()) {
  			//statistics
  			double timeSpend = System.currentTimeMillis()-lastPropTime;
- 			String stat = "Handled "+(++propertyCount)+" Property. Last one took "+timeSpend+" millis = "+(timeSpend/1000)+"s = "+(timeSpend/60000)+" min\n";
- 				   stat+="Last: objByProp="+objByProp+", valueObjectByProp="+valueObjectByProp+" stmtByProp="+stmtCountByProperty+"\n";
- 				   stat+="\t stmtByObjectPropPair="+stmtCountByProperty+", valueStmt="+valueStmtCount+", stmt="+stmtCount+"\n";
- 				   if(timeSpend>0)
- 					   stat+="% Rule add("+durationRuleAdding+")= "+((durationRuleAdding/timeSpend)*100)+" % ValueModel("+valueModelCreation+")= "+((valueModelCreation/timeSpend)*100)+"\n";
- 			System.out.println(stat);
+// 			String stat = "Handled "+(++propertyCount)+" Property. Last one took "+timeSpend+" millis = "+(timeSpend/1000)+"s = "+(timeSpend/60000)+" min\n";
+// 				   stat+="Last: objByProp="+objByProp+", valueObjectByProp="+valueObjectByProp+" stmtByProp="+stmtCountByProperty+"\n";
+// 				   stat+="\t stmtByObjectPropPair="+stmtCountByProperty+", valueStmt="+valueStmtCount+", stmt="+stmtCount+"\n";
+// 				   if(timeSpend>0)
+// 					   stat+="% Rule add("+durationRuleAdding+")= "+((durationRuleAdding/timeSpend)*100)+" % ValueModel("+valueModelCreation+")= "+((valueModelCreation/timeSpend)*100)+"\n";
+// 			System.out.println(stat);
 			lastPropTime = System.currentTimeMillis();
 			stmtCountByProperty=0; objByProp=0; valueObjectByProp=0;
 			sumRuleCreation += durationRuleAdding;
@@ -197,6 +197,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 					int indexO = addIndex(uri, SPO.OBJECT); 
 					IndexProfile profile = new IndexProfile(indexP, indexO);
 					ResIterator subIter = model.listResourcesWithProperty(p, o_node);
+					
 					while(subIter.hasNext()) {
 						stmtCount++; stmtCountByProperty++;
 						Resource s = subIter.next();
@@ -366,8 +367,6 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
  		notifyObservers(status);
 			
 	}
-
-	
 	
 	private Model createFinalValueModel() {
 		Model finalModel = ModelFactory.createDefaultModel();
@@ -623,5 +622,6 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 	
 	public void setHDT(boolean activate) {
 		this.hdt = activate;
+		System.out.println("Using hdt "+activate);
 	}
 }

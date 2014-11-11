@@ -38,6 +38,7 @@ public class compressionFrame extends JFrame implements Observer{
 	ModelCompressor compr;
 	File f;
 	boolean delete = false;
+	boolean hdt = true;
 	int deleteBorder = 0;
 	
 	
@@ -146,6 +147,7 @@ public class compressionFrame extends JFrame implements Observer{
 			compr.setDelete(deleteBorder);
 		else
 			compr.setDelete(0);
+		compr.setHDT(hdt);
 		thread.start();
 //		compr.compress(f, 0);
 	}
