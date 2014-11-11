@@ -1,6 +1,6 @@
-@base <http://example.com/> .
-@prefix foaf: <http://www.foaf.com/onto#> .
-@prefix rdf: <http://redf.cddf.com/> .
+@base <http://example.com/ns/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xn: <http://xmlns.com/onto#> .
 <john> rdf:type <ComputerScientist> .
 <doe> rdf:type <ComputerScientist> .
