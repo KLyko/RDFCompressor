@@ -1,0 +1,15 @@
+@base <http://example.com/> .
+@prefix foaf: <http://www.foaf.com/onto#> .
+@prefix rdf: <http://redf.cddf.com/> .
+@prefix xn: <http://xmlns.com/onto#> .
+<john> rdf:type <ComputerScientist> .
+<doe> rdf:type <ComputerScientist> .
+<john> rdf:type <Person> .
+<doe> rdf:type <Person> .
+<mary> rdf:type <Person> .
+<kate> rdf:type <Person> .
+<john> rdf:type foaf:Agent .
+<doe> rdf:type foaf:Agent .
+<kate> rdf:type foaf:Agent .
+<christin> rdf:type foaf:Agent .
+<christin> foaf:age "41"^^xn:int .
