@@ -55,13 +55,15 @@ public class ScalabilityEvaluation {
 		float[] percantiles = new float[]{0.1f,0.2f,0.3f,0.4f,0.5f,0.6f,0.7f,0.8f,0.9f,1.0f};
 		
 		Model completeModel = ModelLoader.getModel(path.getAbsolutePath());
-		
-		for(float perc : percantiles) {
-			String logExt="_"+perc+"_";
-			ModelCompressor compr = new ModelCompressor(path);
-			Model model = ModelLoader.createSubModel(completeModel, perc);
-			compr.compress(model, logExt);
+		for(int run =1; run<=3; run++) {
+			for(float perc : percantiles) {
+				String logExt="_run"+run+"_"+perc+"_";
+				ModelCompressor compr = new ModelCompressor(path);
+				Model model = ModelLoader.createSubModel(completeModel, perc);
+				compr.compress(model, logExt);
+			}
 		}
+		
 		
 	}
 	
@@ -72,7 +74,7 @@ public class ScalabilityEvaluation {
 
 				@Override
 				public boolean accept(File dir, String name) {
-						return name.endsWith(".cp.bz2");
+						return name.endsWith(".cp.tar.bz2");
 				}			
 			};
 			files = f.list(nameFilter);

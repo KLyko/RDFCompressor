@@ -188,7 +188,7 @@ public class MainFrame extends JFrame {
 		cframe = new compressionFrame(fileToCompress);
 		cframe.setVisible(true);
 		cframe.setFile(fileToCompress);
-		cframe.setAlwaysOnTop(true);
+//		cframe.setAlwaysOnTop(true),
 		cframe.start();
 	}
 	
@@ -197,7 +197,7 @@ public class MainFrame extends JFrame {
 		dframe = new decompressionFrame(fileToCompress);
 		dframe.setVisible(true);
 		dframe.setFile(fileToCompress);
-		dframe.setAlwaysOnTop(true);
+//		dframe.setAlwaysOnTop(true);
 		dframe.start();
 	}
 }

@@ -115,14 +115,14 @@ public class DefaultDecompressor extends Observable implements DeCompressor, Run
 	 	notifyObservers(status);
 		if(!hasDeleteRules) {
 			int count = 0;
-			int[] perc = new int[10];
-			for(int i = 0; i<10;i++) {
-				perc[i] = (int) (ruleMap.size() * (0.1*i));
-				System.out.println(10*(i+1)+"% := "+perc[i]);
-			}
+//			int[] perc = new int[10];
+//			for(int i = 0; i<10;i++) {
+//				perc[i] = (int) (ruleMap.size() * (0.1*i));
+//				System.out.println(10*(i+1)+"% := "+perc[i]);
+//			}
 			int percID = 0;
-//			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-//		    String s = bufferRead.readLine();
+			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+		    String s = bufferRead.readLine();
 		 for(Integer rNr : ruleMap.keySet()) {
 			 count++;
 			 Set<String> nts = buildNTriples(rNr, new HashSet<Integer>(), new HashSet<Integer>());
@@ -133,7 +133,7 @@ public class DefaultDecompressor extends Observable implements DeCompressor, Run
 ////				bufferRead = new BufferedReader(new InputStreamReader(System.in));
 ////			    s = bufferRead.readLine();
 //			 }
-			 System.out.println("\n\nNr of triples: "+triples.size());
+			 System.out.println("Building triples of "+count+" of "+ruleMap.size()+" Rules: Nr of triples: "+triples.size());
 		 }
 		} else {
 			 System.out.println("Model has delete rules");
@@ -182,14 +182,15 @@ public class DefaultDecompressor extends Observable implements DeCompressor, Run
 		status.update("Successfully decompressed " + triples.size() + " triples!", "");
  		notifyObservers(status);
 // 		Collections.sort(triples);
- 		for(String s : triples) {
- 			System.out.println(s);
- 		}
- 		StmtIterator stmtIt = globalModel.listStatements();
- 		while(stmtIt.hasNext()) {
- 			
- 			System.out.println(stmtIt.next().asTriple());
- 		}
+// 		for(String s : triples) {
+// 			System.out.println(s);
+// 		}
+// 		StmtIterator stmtIt = globalModel.listStatements();
+// 		while(stmtIt.hasNext()) {
+// 			
+// 			System.out.println(stmtIt.next().asTriple());
+// 		}
+ 		System.out.println("Decompression finished. Model with "+globalModel.size()+" Statements loaded.");
 		return globalModel;
 	}
 
@@ -220,9 +221,9 @@ public class DefaultDecompressor extends Observable implements DeCompressor, Run
 				triples.add(triple);
 			}
 			for(Integer parentID : r.getParentIndices()) { //recursion
-				System.out.println("Recursion on "+parentID+" with "+r.getProfile().getSubjects());
-				BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-			    String s = bufferRead.readLine();
+//				System.out.println("Recursion on "+parentID+" with "+r.getProfile().getSubjects());
+//				BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+//			    String s = bufferRead.readLine();
 				triples.addAll(buildNTriples(parentID, r.getProfile().getSubjects(), vistitedParentNodes));
 			}
 		} else { // build triples from uris from children rules.
@@ -242,9 +243,9 @@ public class DefaultDecompressor extends Observable implements DeCompressor, Run
 			if(uris.size()>0)
 				for(Integer parentID : r.getParentIndices()) { //recursion
 	//				uris.removeAll(r.deleteGraph);
-					System.out.println("Recursion using delete graph on parent "+parentID+" with Uris "+uris);
-					BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-				    String s = bufferRead.readLine();
+//					System.out.println("Recursion using delete graph on parent "+parentID+" with Uris "+uris);
+//					BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+//				    String s = bufferRead.readLine();
 					triples.addAll(buildNTriples(parentID, uris, vistitedParentNodes));
 				}
 		}

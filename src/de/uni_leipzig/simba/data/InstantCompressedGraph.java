@@ -122,7 +122,7 @@ public class InstantCompressedGraph extends IndexCompressedGraph{
     				HashMap<Integer, RuleToDeleteGraph> dels = computeDeleteBasedRules(r, this.deleteBorder);
     				for(Entry<Integer, RuleToDeleteGraph> entry : dels.entrySet()) {
     					IndexRule parent = rules.get(entry.getKey());
-    					if(!parent.parents.contains(r)) {
+    					if(!parent.parents.contains(r) && parent.compareTo(r)>=0) {
 	    					RuleToDeleteGraph rToDelGraph = entry.getValue();
 	//    					rToDelGraph.
 	    					parent.deleteGraph.addAll(rToDelGraph.notIn);

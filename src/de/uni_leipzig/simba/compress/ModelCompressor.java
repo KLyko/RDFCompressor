@@ -17,6 +17,10 @@ import java.util.Map.Entry;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.rdfhdt.hdt.hdt.HDT;
+import org.rdfhdt.hdt.hdt.HDTManager;
+import org.rdfhdt.hdt.options.HDTSpecification;
+import org.rdfhdt.hdt.enums.RDFNotation;
 
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
@@ -55,7 +59,9 @@ import de.uni_leipzig.simba.util.PrefixHelper;
  *
  */
 public class ModelCompressor extends BasicCompressor implements Compressor, Runnable {
+	boolean hdt = true;
 	boolean abbreviate = false;
+	public final static String valueModelHDTName = "valueModel.hdt";
 	private Model readModel()  {
 		Model model = ModelFactory.createDefaultModel();
  		try {
@@ -243,10 +249,17 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 							uri = "_:"+r.getId().toString();
 							System.out.println("Created AnonID for s_val: "+uri+" anon.label: "+r.getId().getLabelString());
 						}
+//						if(!hdt) {
+							Resource sIR = valueModel.createResource(""+addIndex(uri, SPO.SUBJECT));
+							Property pIR = valueModel.createProperty(""+indexP);
+							valueModel.add(sIR, pIR, o_node);
+//						} else {
+//							Resource sIR = valueModel.createResource(uri);
+//							Property pIR = valueModel.createProperty(p);
 						
-						Resource sIR = valueModel.createResource(""+addIndex(uri, SPO.SUBJECT));
-						Property pIR = valueModel.createProperty(""+indexP);
-						valueModel.add(sIR, pIR, o_node);
+//							valueModel.add(r, p, o_node);
+//						}
+						
 						valueModelCreation += (System.currentTimeMillis()-startValueAdd);
 						valueStmtCount++; stmtCount++;
 //						System.out.println("new Value statement <"+sIR+"><"+pIR+">"+o_node);		
@@ -510,7 +523,7 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 	private File writeBZip2TarFile(File input, IndexCompressedGraph ruleGraph) throws IOException {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
 		File file = new File(input.getAbsolutePath() +logFileSuffix+ ".cp.tar.bz2");
-		OutputStream os = new FileOutputStream(file, true);
+		OutputStream os = new FileOutputStream(file, false);
 		OutputStream bzos = new BZip2CompressorOutputStream(os);
 		TarArchiveOutputStream aos = new TarArchiveOutputStream(bzos);
 		//Write rules to output stream
@@ -522,16 +535,53 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 		aos.write(allRules);
 		aos.closeArchiveEntry();
 		//---------------------------- --------------------------- -------------------
-		outputStream = new ByteArrayOutputStream( );
-		Model finalValueModel = createFinalValueModel();
-		if(finalValueModel.size()>0) {
-			finalValueModel.write(outputStream, "TURTLE");
-			byte[] turtle = outputStream.toByteArray();
-			TarArchiveEntry turtleEntry = new TarArchiveEntry(valueModelFileName);
-			turtleEntry.setSize(turtle.length);
-			aos.putArchiveEntry(turtleEntry);
-			aos.write(turtle);
-			aos.closeArchiveEntry();
+		if(!hdt) {
+			
+			outputStream = new ByteArrayOutputStream( );
+			Model finalValueModel = createFinalValueModel();
+			if(finalValueModel.size()>0) {
+				finalValueModel.write(outputStream, "TURTLE");
+				byte[] turtle = outputStream.toByteArray();
+				writeLogFile(input, "Serializing value model of size "+finalValueModel.size()+" using Turtle", true);
+				TarArchiveEntry turtleEntry = new TarArchiveEntry(valueModelFileName);
+				turtleEntry.setSize(turtle.length);
+				aos.putArchiveEntry(turtleEntry);
+				aos.write(turtle);
+				aos.closeArchiveEntry();
+			}
+		} else {
+			
+		
+		//------------------------hdt--------------------------------------------------
+		try{
+			String tmpDir = System.getProperty("java.io.tmpdir");
+			FileOutputStream fos = new FileOutputStream(tmpDir + "/"+getFileName(input)+"data.nt");
+			
+			outputStream = new ByteArrayOutputStream( );
+			Model finalValueModel = createFinalValueModel();
+			if(finalValueModel.size()>0) {
+				finalValueModel.write(fos, "N-TRIPLE");
+				fos.close();
+				writeLogFile(input, "Serializing value model of size "+finalValueModel.size()+" using HDT", true);
+				HDT hdt = HDTManager.generateHDT(
+					tmpDir + "/"+getFileName(input)+"data.nt",
+					"urn:rdfcomp",
+					RDFNotation.parse("ntriples"),
+					new HDTSpecification(),
+					null
+				);
+				hdt.saveToHDT(outputStream, null);
+				
+				byte[] turtle = outputStream.toByteArray();
+				TarArchiveEntry turtleEntry = new TarArchiveEntry(valueModelHDTName);
+				turtleEntry.setSize(turtle.length);
+				aos.putArchiveEntry(turtleEntry);
+				aos.write(turtle);
+				aos.closeArchiveEntry();
+			} 
+		}catch (Exception e){e.printStackTrace();};
+			
+			
 		}	
 		aos.finish();
 		aos.close();
@@ -539,27 +589,39 @@ public class ModelCompressor extends BasicCompressor implements Compressor, Runn
 		os.close();
 		return file;
 		}
-	/**
-	 * Old method concatenates all in one bzip2 file
-	 * @param input2
-	 * @param ruleGraph
-	 * @throws IOException
-	 */
-	@Deprecated
-	private File writeSingleBzip2File(File input2, IndexCompressedGraph ruleGraph) throws IOException{
-		File file = new File(input.getAbsolutePath() +logFileSuffix+".cp.bz2");
-		OutputStream fos = new BufferedOutputStream(new FileOutputStream(file, true));
-        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
-        writeRulesToOutputStream(outputStream, ruleGraph);
-  
-		Model finalValueModel = createFinalValueModel();
-	    if(finalValueModel.size()>0) {
-	  		outputStream.write((FILE_SEP+"\n").getBytes());
-	  		finalValueModel.write(outputStream, "TURTLE");
-		}
-		outputStream.close();
-        fos.close();
-        return file;
+//	/**
+//	 * Old method concatenates all in one bzip2 file
+//	 * @param input2
+//	 * @param ruleGraph
+//	 * @throws IOException
+//	 */
+//	@Deprecated
+//	private File writeSingleBzip2File(File input2, IndexCompressedGraph ruleGraph) throws IOException{
+//		File file = new File(input.getAbsolutePath() +logFileSuffix+".cp.bz2");
+//		OutputStream fos = new BufferedOutputStream(new FileOutputStream(file, true));
+//        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
+//        writeRulesToOutputStream(outputStream, ruleGraph);
+//  
+//		Model finalValueModel = createFinalValueModel();
+//	    if(finalValueModel.size()>0) {
+//	  		outputStream.write((FILE_SEP+"\n").getBytes());
+//	  		finalValueModel.write(outputStream, "TURTLE");
+//		}
+//		outputStream.close();
+//        fos.close();
+//        return file;
+//	}
+	
+	private String getFileName(File f) {
+		String fn = f.getName();
+		if(fn.endsWith("/"))
+			fn = fn.substring(0,fn.length()-1);
+		if(fn.endsWith("\\"))
+			fn = fn.substring(0,fn.length()-1);
+		return fn;
 	}
 	
+	public void setHDT(boolean activate) {
+		this.hdt = activate;
+	}
 }

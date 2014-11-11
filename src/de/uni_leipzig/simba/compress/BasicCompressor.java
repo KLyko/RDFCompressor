@@ -152,31 +152,11 @@ public class BasicCompressor extends Observable implements IndexBasedCompressorI
 	}
 	
 
-	protected long computeOrginalNTriple(Model model, File file) {
-//		String fileName = file.getAbsolutePath()+"_N3.n3.bz2";
-//		if(!file.isDirectory()) {
-//			fileName = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
-//		}
+	public long computeOrginalNTriple(Model model, File file) {
 		File out = new File(file.getAbsolutePath()+logFileSuffix+".nt.bz2");
-//		if(!file.isDirectory() && file.exists() && file.canRead() && (fileName.equalsIgnoreCase("nt") || fileName.equalsIgnoreCase("n3"))) {
-//			try {
-//				InputStream fileInputStream = new BufferedInputStream (new FileInputStream (file));
-//				OutputStream fos = new BufferedOutputStream(new FileOutputStream(out));
-//		        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
-//		        
-//				byte[] buffer = new byte [524288];
-//				int bytesRead;
-//				while ((bytesRead = fileInputStream.read (buffer)) != -1) {
-//					outputStream.write (buffer, 0, bytesRead);
-//				}
-//				outputStream.close();
-//				fileInputStream.close();
-//				} catch(Exception e) {
-//					e.printStackTrace();
-//				}
-//		} else {
+
 			try {
-				OutputStream fos = new BufferedOutputStream(new FileOutputStream(out));
+				OutputStream fos = new BufferedOutputStream(new FileOutputStream(out, false));
 		        BZip2CompressorOutputStream  outputStream = new BZip2CompressorOutputStream (fos);
 			    
 				model.write(outputStream, "N-TRIPLE");

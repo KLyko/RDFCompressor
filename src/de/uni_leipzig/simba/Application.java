@@ -23,30 +23,18 @@ public class Application{
 	
 	public static Options getCLIOptions() {
 		Options options = new Options();
-		options.addOption("c", true, "path to resource which should be compressed");
-		options.addOption("f", true, "log file extension");
+		options.addOption("c", true, "Path to resource which should be compressed");
+		options.addOption("d", true, "Path to compressed file *.cp.tar.bzip2 which should be decompressed");
+		options.addOption("f", true, "Log file name extension");
 		options.addOption("del", true, "using delete graph with this size");
-		options.addOption("comb", false, "");
+//		options.addOption("comb", false, "");
+		options.addOption("hdt",false,"If set value model is further processed with HDT.");
 		return options;
 	}
 	
 	
 	
     public static void main(String[] args) throws ArchiveException{
-    	  if(System.getProperty("user.name").equalsIgnoreCase("lyko")) {
-  	    	File path = new File("resources/dummy_data3.nt");
-//  	    	path = new File("uba/lubm50/");
-//  	    	path = new File("resources/wordnet-membermeronym.rdf");
-//  	    	path = new File ("resources/archive_hub_dump.nt");
-//  	    		path = new File("resources/ubl_part/");
-//  	    	path = new File("C:\\Users\\Lyko\\Downloads\\jamendo-rdf\\jamendo.rdf");
-  			if (path.exists()){
-//  			    CompressorFactory cf = new CompressorFactory();
-  				ModelCompressor compressor = new ModelCompressor(path);
-//  			    compressor.setLogFileSuffix("bloom");
-  			    compressor.compress();
-  			}
-  	    } else {
   	    	CommandLineParser parser = new BasicParser();
   	    	try {
   				CommandLine cmd = parser.parse(getCLIOptions(), args);
@@ -58,14 +46,17 @@ public class Application{
 	  					System.err.println("File/Directory to compress not found.");
 	  					System.exit(0);
 	  				}
-	  				Compressor compressor = CompressorFactory.getCompressor(Type.INDEX);
-	  				if(cmd.hasOption("comb"))
-	  					compressor = new ModelCompressor(path);
+	  				ModelCompressor compressor = new ModelCompressor(path);
+//	  				if(cmd.hasOption("comb"))
+//	  					compressor = new ModelCompressor(path);
 	  				if(cmd.hasOption("f"))
 	  					compressor.setLogFileSuffix(cmd.getOptionValue("f"));
-	  				int delete = -1;
+	  				int delete = 1;
 	  				if(cmd.hasOption("del")) {
 	  					delete = Integer.parseInt(cmd.getOptionValue("del"));
+	  				}
+	  				if(cmd.hasOption("hdt")) {
+	  					compressor.setHDT(true);
 	  				}
 	  				compressor.setFile(path);
 	  				compressor.setDelete(delete);
@@ -96,7 +87,6 @@ public class Application{
   				// TODO Auto-generated catch block
   				e.printStackTrace();
   			}
-  	    }
     }
 
 }
