@@ -11,10 +11,6 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
 
-import de.uni_leipzig.simba.compress.Compressor;
-import de.uni_leipzig.simba.compress.CompressorFactory;
-import de.uni_leipzig.simba.compress.CompressorFactory.Type;
-import de.uni_leipzig.simba.compress.IndexBasedCompressor;
 import de.uni_leipzig.simba.compress.ModelCompressor;
 import de.uni_leipzig.simba.decompress.DefaultDecompressor;
 
